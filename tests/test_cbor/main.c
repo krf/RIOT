@@ -110,8 +110,8 @@ static void test_major_type_1(void)
 
 static void test_major_type_2(void)
 {
-    CBOR_CHECK(const char*, byte_string, stream, "", HEX_LITERAL(0x40));
-    CBOR_CHECK(const char*, byte_string, stream, "a", HEX_LITERAL(0x4161));
+    CBOR_CHECK(char*, byte_string, stream, "", HEX_LITERAL(0x40));
+    CBOR_CHECK(char*, byte_string, stream, "a", HEX_LITERAL(0x41, 0x61));
 }
 
 static void test_major_type_7(void)

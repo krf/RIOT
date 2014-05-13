@@ -264,10 +264,18 @@ void cbor_serialize_float(cbor_stream_t* s, float val)
     s->pos += 4;
 }
 
-size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val)
+size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char** val)
 {
-    // TODO: Implement me
-    return 0;
+    // get byte string length:
+    char oldStartByte = stream->data[offset];
+    stream->data[offset] = (CBOR_UINT | (stream->data[offset] & CBOR_INFO_MASK)); // create uint start byte
+    uint64_t byteStringLen;
+    size_t intLen = decode_int(stream, offset, &byteStringLen);
+
+    memcpy(*val, &stream->data[offset+intLen], byteStringLen);
+    (*val)[byteStringLen] = '\0';
+    size_t len = intLen + byteStringLen;
+    return len;
 }
 
 void cbor_serialize_byte_string(cbor_stream_t* s, const char* val)
@@ -279,6 +287,33 @@ void cbor_serialize_byte_string(cbor_stream_t* s, const char* val)
     s->data[oldstart] = (CBOR_BYTES | (s->data[oldstart] & CBOR_INFO_MASK)); // fix major type information
     memcpy(&(s->data[s->pos]), val, length); // copy byte string into our cbor struct
     s->pos += length;
+}
+
+size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, wchar_t** val)
+{
+    //TODO: implement
+    return 0;
+}
+
+void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val)
+{
+    // unicode strings = major type 3
+    size_t oldstart = s->pos;
+    size_t length = strlen(val);
+    cbor_serialize_uint64_t(s, (uint64_t)length);
+    s->data[oldstart] = (CBOR_TEXT | (s->data[oldstart] & CBOR_INFO_MASK)); // fix major type information
+    memcpy(&(s->data[s->pos]), val, length); // copy unicode string into our cbor struct
+    s->pos += length;
+}
+
+size_t cbor_deserialize_array(cbor_stream_t* stream, size_t offset, wchar_t** val)
+{
+    return;
+}
+
+void cbor_serialize_array(cbor_stream_t* s, const wchar_t* val)
+{
+    return;
 }
 
 // BEGIN: Printers
