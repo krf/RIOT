@@ -154,23 +154,28 @@ TestRef CborTest_tests(void)
     return (TestRef)&CborTest;
 }
 
-/*
+
 static void manual_test(void)
 {
     cbor_stream_t stream;
     cbor_init(&stream, 1024);
-    cbor_serialize_byte_string(&stream, "foo");
+    //cbor_serialize_byte_string(&stream, "foo");
+
+    char* myarray[] = {"abc", "def", "AA"};
+    cbor_serialize_byte_string_array(&stream, myarray, (uint64_t) 3);
     cbor_stream_print(&stream);
+    printf("\n");
 }
-*/
+
 
 int main()
 {
-    //manual_test();
+    manual_test();
 
     TextUIRunner_setOutputter(TextOutputter_outputter());
     TextUIRunner_start();
     TextUIRunner_runTest(CborTest_tests());
     TextUIRunner_end();
+
     return 0;
 }

@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <wchar.h>
 
 typedef struct cbor_stream_t
 {
@@ -64,7 +65,7 @@ size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, wch
 void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val);
 
 size_t cbor_deserialize_array(cbor_stream_t* stream, size_t offset, wchar_t** val);
-void cbor_serialize_array(cbor_stream_t* s, const wchar_t* val);
+void cbor_serialize_byte_string_array(cbor_stream_t* s, char** val, uint64_t numElems);
 
 #endif
 
