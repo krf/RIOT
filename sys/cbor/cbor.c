@@ -19,7 +19,9 @@
 
 #include "cbor.h"
 
+#include <arpa/inet.h>
 #include <assert.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +62,40 @@
 
 #define CBOR_TYPE(stream, offset) (stream->data[offset] & CBOR_TYPE_MASK)
 #define CBOR_ADDITIONAL_INFO(stream, offset) (stream->data[offset] & CBOR_INFO_MASK)
+
+/**
+ * Convert float @p x to network format
+ */
+static float htonf(float x)
+{
+    union u { float f; uint32_t i; } u = { .f = x };
+    u.i = htonl(u.i);
+    return u.f;
+}
+
+/**
+ * Convert float @p x to host format
+ */
+static float ntohf(float x)
+{
+    union u { float f; uint32_t i; } u = { .f = x };
+    u.i = ntohl(u.i);
+    return u.f;
+}
+
+/**
+ * Print @p size bytes at @p data in hexadecimal display format
+ */
+void dump_memory(unsigned char* data, size_t size)
+{
+    if (!data || !size)
+        return;
+
+    printf("0x");
+    for (size_t i = 0; i < size; ++i) {
+        printf("%02X", data[i]);
+    }
+}
 
 void cbor_init(cbor_stream_t* stream, size_t size)
 {
@@ -249,8 +285,9 @@ size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val)
 
     unsigned char* data = &stream->data[offset];
     if (*data == CBOR_FLOAT16) {
+        return 0; // TODO
     } else if (*data == CBOR_FLOAT32) {
-        memcpy(val, data, 4);
+        *val = ntohf(*(float*)(data+1));
         return 4;
     }
 
@@ -260,7 +297,7 @@ size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val)
 void cbor_serialize_float(cbor_stream_t* s, float val)
 {
     s->data[s->pos++] = CBOR_FLOAT32;
-    memcpy(&s->data[s->pos], &val, 4);
+    (*(float*)(&s->data[s->pos])) = htonf(val);
     s->pos += 4;
 }
 
@@ -319,12 +356,7 @@ void cbor_serialize_array(cbor_stream_t* s, const wchar_t* val)
 // BEGIN: Printers
 void cbor_stream_print(cbor_stream_t* stream)
 {
-    if (stream->pos) {
-        printf("0x");
-        for (size_t i = 0; i < stream->pos; i ++) {
-            printf("%02X", stream->data[i]);
-        }
-    }
+    dump_memory(stream->data, stream->pos);
 }
 
 /**

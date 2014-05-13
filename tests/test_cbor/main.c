@@ -16,6 +16,7 @@
 #include <textui/TextUIRunner.h>
 #include <textui/TextOutputter.h>
 
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -56,8 +57,10 @@
 // BEGIN: Comparator functions
 #define EQUAL_INT(a, b) \
     (a == b)
-#define EQUAL_FLOAT(a, b) \
-    (fabs(a - b) < 0.00001)
+#define EQUAL_FLOAT(a, b) ( \
+    (isinf(a) && isinf(b)) || \
+    (isnan(a) && isnan(b)) || \
+    (fabs(a - b) < 0.00001))
 #define EQUAL_STRING(a, b) \
     (strcmp(a, b) == 0)
 // END: Comparator functions
@@ -130,6 +133,9 @@ static void test_major_type_7(void)
     CBOR_CHECK(bool, bool, stream, true,  HEX_LITERAL(0xf5), EQUAL_INT);
 
     CBOR_CHECK(float, float, stream, .0f, HEX_LITERAL(0xfa, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
+    CBOR_CHECK(float, float, stream, INFINITY, HEX_LITERAL(0xfa, 0x7f, 0x80, 0x00, 0x00), EQUAL_FLOAT);
+    CBOR_CHECK(float, float, stream, NAN, HEX_LITERAL(0xfa, 0x7f, 0xc0, 0x00, 0x00), EQUAL_FLOAT);
+    CBOR_CHECK(float, float, stream, -INFINITY, HEX_LITERAL(0xfa, 0xff, 0x80, 0x00, 0x00), EQUAL_FLOAT);
 }
 
 /**
