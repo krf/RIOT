@@ -53,8 +53,6 @@
 
 #define HEX_LITERAL(...) {__VA_ARGS__}
 
-cbor_stream_t stream;
-
 // BEGIN: Comparator functions
 #define EQUAL_INT(a, b) \
     (a == b)
@@ -63,6 +61,8 @@ cbor_stream_t stream;
 #define EQUAL_STRING(a, b) \
     (strcmp(a, b) == 0)
 // END: Comparator functions
+
+cbor_stream_t stream;
 
 static void setUp(void)
 {
