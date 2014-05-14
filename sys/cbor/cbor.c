@@ -85,6 +85,67 @@ static float ntohf(float x)
 }
 
 /**
+ * Source: CBOR RFC reference implementation
+ */
+double decode_float_half(unsigned char *halfp)
+{
+    int half = (halfp[0] << 8) + halfp[1];
+    int exp = (half >> 10) & 0x1f;
+    int mant = half & 0x3ff;
+    double val;
+    if (exp == 0)
+        val = ldexp(mant, -24);
+    else if (exp != 31)
+        val = ldexp(mant + 1024, exp - 25);
+    else
+        val = mant == 0 ? INFINITY : NAN;
+    return half & 0x8000 ? -val : val;
+}
+
+/**
+ * Source: According to http://gamedev.stackexchange.com/questions/17326/conversion-of-a-number-from-single-precision-floating-point-representation-to-a
+ */
+static uint16_t encode_float_half(float x)
+{
+    union u { float f; uint32_t i; } u = { .f = x };
+
+    uint16_t bits = (u.i >> 16) & 0x8000; /* Get the sign */
+    uint16_t m = (u.i >> 12) & 0x07ff; /* Keep one extra bit for rounding */
+    unsigned int e = (u.i >> 23) & 0xff; /* Using int is faster here */
+
+    /* If zero, or denormal, or exponent underflows too much for a denormal
+     * half, return signed zero. */
+    if (e < 103)
+        return bits;
+
+    /* If NaN, return NaN. If Inf or exponent overflow, return Inf. */
+    if (e > 142)
+    {
+        bits |= 0x7c00u;
+        /* If exponent was 0xff and one mantissa bit was set, it means NaN,
+         * not Inf, so make sure we set one mantissa bit too. */
+        bits |= e == 255 && (u.i & 0x007fffffu);
+        return bits;
+    }
+
+    /* If exponent underflows but not too much, return a denormal */
+    if (e < 113)
+    {
+        m |= 0x0800u;
+        /* Extra rounding may overflow and set mantissa to 0 and exponent
+         * to 1, which is OK. */
+        bits |= (m >> (114 - e)) + ((m >> (113 - e)) & 1);
+        return bits;
+    }
+
+    bits |= ((e - 112) << 10) | (m >> 1);
+    /* Extra rounding. An overflow will set mantissa to 0 and increment
+     * the exponent, which is OK. */
+    bits += m & 1;
+    return bits;
+}
+
+/**
  * Print @p size bytes at @p data in hexadecimal display format
  */
 void dump_memory(unsigned char* data, size_t size)
