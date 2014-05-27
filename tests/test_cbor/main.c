@@ -186,10 +186,10 @@ TestRef CborTest_tests(void)
 
 static void manual_test(void)
 {
-    cbor_stream_t stream;
+    /*cbor_stream_t stream;
     cbor_init(&stream, 1024);
 
-    const wchar_t* unicode = L"aab";
+    const wchar_t* unicode = L"abcd";
     cbor_serialize_unicode_string(&stream, unicode);
     //void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val);
     cbor_stream_print(&stream);
@@ -199,15 +199,17 @@ static void manual_test(void)
     printf("\ndeserialized string: %s\n",res);*/
 
     // working cbor_(de)serialize_byte_string test:
-    /*cbor_stream_t stream;
+    cbor_stream_t stream;
     cbor_init(&stream, 1024);
     cbor_serialize_byte_string(&stream, "abc");
     cbor_stream_print(&stream);
     char* res = (char*)calloc(10, (size_t)1);
     cbor_deserialize_byte_string(&stream, (size_t)0, &res);
-    printf("\ndeserialized string: %s\n",res);*/
+    printf("\ndeserialized string: %s\n",res);
 
     printf("\n");
+    //free(res);
+    cbor_destroy(&stream);
 }
 
 

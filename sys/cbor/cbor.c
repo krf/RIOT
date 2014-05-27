@@ -367,9 +367,10 @@ size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* 
 {
     // get byte string length:
     char oldStartByte = stream->data[offset];
-    stream->data[offset] = (CBOR_UINT | (stream->data[offset] & CBOR_INFO_MASK)); // create uint start byte
+    stream->data[offset] = (CBOR_UINT | (stream->data[offset] & CBOR_INFO_MASK)); // create uint start byte so that we can determine the length of our byte array
     uint64_t byteStringLen;
     size_t intLen = cbor_deserialize_uint64_t(stream, offset, &byteStringLen);
+    stream->data[offset] = oldStartByte;
 
     memcpy(val, &stream->data[offset+intLen], byteStringLen);
     val[byteStringLen] = '\0';
@@ -388,15 +389,17 @@ void cbor_serialize_byte_string(cbor_stream_t* s, const char* val)
     s->pos += length;
 }
 
-size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, wchar_t** val)
+size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, wchar_t* val)
 {
     // get byte string length:
+    wchar_t oldStartChar = stream->data[offset];
     stream->data[offset] = (CBOR_UINT | (stream->data[offset] & CBOR_INFO_MASK)); // create uint start byte
     uint64_t byteStringLen;
     size_t intLen = cbor_deserialize_uint64_t(stream, offset, &byteStringLen);
+    stream->data[offset] = oldStartChar;
 
-    memcpy(*val, &stream->data[offset+intLen], byteStringLen);
-    (*val)[byteStringLen] = L'\0';
+    memcpy(val, &stream->data[offset+intLen], byteStringLen);
+    val[byteStringLen] = L'\0';
     size_t len = intLen + byteStringLen;
     return len;
 }
@@ -406,11 +409,12 @@ void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val)
     // unicode strings = major type 3
     size_t oldstart = s->pos;
     size_t length = wcslen(val);
+    size_t size = length*sizeof(wchar_t);
     printf("\nval length: %u\nval: %ls\n",length,val);
     cbor_serialize_uint64_t(s, (uint64_t)length);
     s->data[oldstart] = (CBOR_TEXT | (s->data[oldstart] & CBOR_INFO_MASK)); // fix major type information
-    memcpy(&(s->data[s->pos]), val, length*6); // copy unicode string into our cbor struct
-    s->pos += length;
+    wmemcpy(&(s->data[s->pos]), val, size); // copy unicode string into our cbor struct
+    s->pos += size;
 }
 
 size_t cbor_deserialize_array(cbor_stream_t* stream, size_t offset, wchar_t** val)
