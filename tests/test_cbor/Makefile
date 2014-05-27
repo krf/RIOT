@@ -1,4 +1,4 @@
-export PROJECT = test_cbor
+export APPLICATION = test_cbor
 include ../Makefile.tests_common
 
 USEMODULE += cbor embunit embunit_textui

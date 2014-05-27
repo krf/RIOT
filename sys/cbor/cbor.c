@@ -363,7 +363,7 @@ void cbor_serialize_float(cbor_stream_t* s, float val)
     s->pos += 4;
 }
 
-size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char** val)
+size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val)
 {
     // get byte string length:
     char oldStartByte = stream->data[offset];
@@ -371,8 +371,8 @@ size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char**
     uint64_t byteStringLen;
     size_t intLen = cbor_deserialize_uint64_t(stream, offset, &byteStringLen);
 
-    memcpy(*val, &stream->data[offset+intLen], byteStringLen);
-    (*val)[byteStringLen] = '\0';
+    memcpy(val, &stream->data[offset+intLen], byteStringLen);
+    val[byteStringLen] = '\0';
     size_t len = intLen + byteStringLen;
     return len;
 }
