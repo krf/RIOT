@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <wchar.h>
+#include <stdlib.h>
 
 #define CBOR_CHECK_SERIALIZE(stream, cbor_serialize_function, input, expected_value) do { \
     cbor_clear(&stream); \
@@ -159,11 +161,25 @@ static void manual_test(void)
 {
     cbor_stream_t stream;
     cbor_init(&stream, 1024);
-    //cbor_serialize_byte_string(&stream, "foo");
 
-    char* myarray[] = {"abc", "def", "AA"};
-    cbor_serialize_byte_string_array(&stream, myarray, (uint64_t) 3);
+    const wchar_t* unicode = L"aab";
+    cbor_serialize_unicode_string(&stream, unicode);
+    //void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val);
     cbor_stream_print(&stream);
+    /*wchar_t* res = (wchar_t*)calloc(10, (size_t)1);
+    cbor_deserialize_unicode_string(&stream, (size_t) 0, &res);
+    //size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, wchar_t** val);
+    printf("\ndeserialized string: %s\n",res);*/
+
+    // working cbor_(de)serialize_byte_string test:
+    /*cbor_stream_t stream;
+    cbor_init(&stream, 1024);
+    cbor_serialize_byte_string(&stream, "abc");
+    cbor_stream_print(&stream);
+    char* res = (char*)calloc(10, (size_t)1);
+    cbor_deserialize_byte_string(&stream, (size_t)0, &res);
+    printf("\ndeserialized string: %s\n",res);*/
+
     printf("\n");
 }
 
@@ -171,11 +187,10 @@ static void manual_test(void)
 int main()
 {
     manual_test();
-
-    TextUIRunner_setOutputter(TextOutputter_outputter());
+    /*TextUIRunner_setOutputter(TextOutputter_outputter());
     TextUIRunner_start();
     TextUIRunner_runTest(CborTest_tests());
     TextUIRunner_end();
-
+    */
     return 0;
 }
