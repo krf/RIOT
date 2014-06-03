@@ -417,27 +417,16 @@ void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val)
     s->pos += size;
 }
 
-size_t cbor_deserialize_array(cbor_stream_t* stream, size_t offset, wchar_t** val)
+size_t cbor_deserialize_array(cbor_stream_t* stream, size_t offset, size_t* size)
 {
-    return;
+    return 0;
 }
 
-void cbor_serialize_array(cbor_stream_t* s, const wchar_t* val)
+void cbor_serialize_array(cbor_stream_t* s, size_t size)
 {
-    return;
-}
-
-void cbor_serialize_byte_string_array(cbor_stream_t* s, char** val, uint64_t numElems)
-{
-    //TODO: implement for types other than char arrays
-    // major type 4 = arrays
-    size_t oldstart = s->pos;
-    cbor_serialize_uint64_t(s, numElems); // serialize number of array items
-    s->data[s->pos - (size_t)1] = CBOR_ARRAY | (s->data[s->pos - (size_t)1] & CBOR_INFO_MASK); // fix major type
-    for (uint64_t i = 0; i < numElems; i++) // serialize array elements
-    {
-        cbor_serialize_byte_string(s, val[i]);
-    }
+    size_t start = s->pos;
+    cbor_serialize_uint64_t(s, size); // serialize number of array items
+    s->data[start] = CBOR_ARRAY | (s->data[start] & CBOR_INFO_MASK); // fix major type
 }
 
 // BEGIN: Printers
