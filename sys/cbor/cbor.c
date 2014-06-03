@@ -21,12 +21,12 @@
 
 #include <arpa/inet.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wchar.h>
 
 #define CBOR_TYPE_MASK          0xE0    // top 3 bits
 #define CBOR_INFO_MASK          0x1F    // low 5 bits
@@ -63,6 +63,9 @@
 
 #define CBOR_TYPE(stream, offset) (stream->data[offset] & CBOR_TYPE_MASK)
 #define CBOR_ADDITIONAL_INFO(stream, offset) (stream->data[offset] & CBOR_INFO_MASK)
+
+// Extra defines not related to the protocol itself
+#define CBOR_STREAM_PRINT_BUFFERSIZE 1024 // bytes
 
 /**
  * Convert float @p x to network format
@@ -365,12 +368,8 @@ void cbor_serialize_float(cbor_stream_t* s, float val)
 
 size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val)
 {
-    // get byte string length:
-    char oldStartByte = stream->data[offset];
-    stream->data[offset] = (CBOR_UINT | (stream->data[offset] & CBOR_INFO_MASK)); // create uint start byte so that we can determine the length of our byte array
     uint64_t byteStringLen;
-    size_t intLen = cbor_deserialize_uint64_t(stream, offset, &byteStringLen);
-    stream->data[offset] = oldStartByte;
+    size_t intLen = decode_int(stream, offset, &byteStringLen); // get byte string length
 
     memcpy(val, &stream->data[offset+intLen], byteStringLen);
     val[byteStringLen] = '\0';
@@ -381,51 +380,47 @@ size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* 
 void cbor_serialize_byte_string(cbor_stream_t* s, const char* val)
 {
     // byte strings = major type 2
-    size_t oldstart = s->pos;
     size_t length = strlen(val);
-    cbor_serialize_uint64_t(s, (uint64_t)length);
-    s->data[oldstart] = (CBOR_BYTES | (s->data[oldstart] & CBOR_INFO_MASK)); // fix major type information
+    encode_int(CBOR_BYTES, s, (uint64_t) length);
+
     memcpy(&(s->data[s->pos]), val, length); // copy byte string into our cbor struct
     s->pos += length;
 }
 
-size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, wchar_t* val)
+size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val)
 {
-    // get byte string length:
-    wchar_t oldStartChar = stream->data[offset];
-    stream->data[offset] = (CBOR_UINT | (stream->data[offset] & CBOR_INFO_MASK)); // create uint start byte
     uint64_t byteStringLen;
-    size_t intLen = cbor_deserialize_uint64_t(stream, offset, &byteStringLen);
-    stream->data[offset] = oldStartChar;
+    size_t intLen = decode_int(stream, offset, &byteStringLen); // get unicode string length
 
     memcpy(val, &stream->data[offset+intLen], byteStringLen);
-    val[byteStringLen] = L'\0';
+    val[byteStringLen] = '\0';
     size_t len = intLen + byteStringLen;
     return len;
 }
 
-void cbor_serialize_unicode_string(cbor_stream_t* s, const wchar_t* val)
+void cbor_serialize_unicode_string(cbor_stream_t* s, const char* val)
 {
     // unicode strings = major type 3
-    size_t oldstart = s->pos;
-    size_t length = wcslen(val);
-    size_t size = length*sizeof(wchar_t);
-    printf("\nval length: %u\nval: %ls\n",length,val);
-    cbor_serialize_uint64_t(s, (uint64_t)length);
-    s->data[oldstart] = (CBOR_TEXT | (s->data[oldstart] & CBOR_INFO_MASK)); // fix major type information
-    wmemcpy(&(s->data[s->pos]), val, size); // copy unicode string into our cbor struct
-    s->pos += size;
+    size_t length = strlen(val);
+    encode_int(CBOR_TEXT, s, (uint64_t) length);
+
+    memcpy(&(s->data[s->pos]), val, length); // copy unicode string into our cbor struct
+    s->pos += length;
 }
 
-size_t cbor_deserialize_array(cbor_stream_t* stream, size_t offset, size_t* size)
+size_t cbor_deserialize_array(cbor_stream_t* s, size_t offset, uint64_t* array_length)
 {
-    return 0;
+    assert(array_length);
+    assert(CBOR_TYPE(s, offset) == CBOR_ARRAY);
+
+    size_t read_bytes = decode_int(s, offset, array_length);
+    return read_bytes;
 }
 
-void cbor_serialize_array(cbor_stream_t* s, size_t size)
+void cbor_serialize_array(cbor_stream_t* s, uint64_t array_length)
 {
     size_t start = s->pos;
-    cbor_serialize_uint64_t(s, size); // serialize number of array items
+    cbor_serialize_uint64_t(s, array_length); // serialize number of array items
     s->data[start] = CBOR_ARRAY | (s->data[start] & CBOR_INFO_MASK); // fix major type
 }
 
@@ -454,6 +449,30 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset)
     switch (CBOR_TYPE(stream, offset)) {
     case CBOR_UINT:
         DESERIALIZE_AND_PRINT(int, "%d")
+    case CBOR_BYTES: {
+        char buffer[CBOR_STREAM_PRINT_BUFFERSIZE];
+        size_t read_bytes = cbor_deserialize_byte_string(stream, offset, buffer);
+        printf("[type: byte string, val: \"%s\"]\n", buffer); \
+        return read_bytes;
+    }
+    case CBOR_ARRAY: {
+        uint64_t size;
+        size_t read_bytes = decode_int(stream, offset, &size);
+
+        printf("[type: CBOR array, length: %"PRIu64"]\n", size);
+
+        // read array items
+        for (uint64_t i = 0; i < size; ++i) {
+            size_t inner_read_bytes = cbor_stream_decode_at(stream, read_bytes);
+            if (inner_read_bytes == 0) {
+                fprintf(stderr, "Failed to read array item at position %"PRIu64, i);
+                break;
+            }
+
+            read_bytes += inner_read_bytes;
+        }
+        return read_bytes;
+    }
     case CBOR_7: {
         switch (stream->data[offset]) {
         case CBOR_FALSE:
@@ -474,7 +493,6 @@ void cbor_stream_decode(cbor_stream_t* stream)
     printf("Data:\n");
     size_t offset = 0;
     while (offset < stream->pos) {
-        printf("  Debug: Inspecting byte: %X\n", stream->data[offset]);
         size_t read_bytes = cbor_stream_decode_at(stream, offset);
         if (read_bytes == 0) {
             fprintf(stderr, "Failed to read from stream at offset %d\n", offset);

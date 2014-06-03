@@ -157,26 +157,57 @@ static void test_major_type_2(void)
     }
 }
 
+static void test_major_type_3(void)
+{
+    {
+        char buffer[128];
+
+        CBOR_CHECK_POINTERTYPE(char*, unicode_string, stream, "", HEX_LITERAL(0x60), buffer, EQUAL_STRING);
+        CBOR_CHECK_POINTERTYPE(char*, unicode_string, stream, "a", HEX_LITERAL(0x61, 0x61), buffer, EQUAL_STRING);
+    }
+}
 
 static void test_major_type_4(void)
 {
     // uniform types
     {
         cbor_clear(&stream);
-        cbor_serialize_array(&stream, 3);
+
+        // serialization
+        cbor_serialize_array(&stream, 2);
         cbor_serialize_int(&stream, 1);
         cbor_serialize_int(&stream, 2);
-        cbor_serialize_int(&stream, 3);
-        CBOR_CHECK_SERIALIZED("serialize_check_uniform_types", stream, HEX_LITERAL(0x83, 0x01, 0x02, 0x03));
+        CBOR_CHECK_SERIALIZED("serialize_check_uniform_types", stream, HEX_LITERAL(0x82, 0x01, 0x02));
+
+        // deserialization
+        uint64_t array_length;
+        size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
+        TEST_ASSERT_EQUAL_INT(2, array_length);
+        int i;
+        offset += cbor_deserialize_int(&stream, offset, &i);
+        TEST_ASSERT_EQUAL_INT(1, i);
+        offset += cbor_deserialize_int(&stream, offset, &i);
+        TEST_ASSERT_EQUAL_INT(2, i);
     }
 
     // mixed types
     {
         cbor_clear(&stream);
-        cbor_serialize_array(&stream, 3);
+        cbor_serialize_array(&stream, 2);
         cbor_serialize_int(&stream, 1);
         cbor_serialize_byte_string(&stream, "a");
-        CBOR_CHECK_SERIALIZED("serialize_check_mixed_types", stream, HEX_LITERAL(0x83, 0x01, 0x41, 0x61));
+        CBOR_CHECK_SERIALIZED("serialize_check_mixed_types", stream, HEX_LITERAL(0x82, 0x01, 0x41, 0x61));
+
+        // deserialization
+        uint64_t array_length;
+        size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
+        TEST_ASSERT_EQUAL_INT(2, array_length);
+        int i;
+        offset += cbor_deserialize_int(&stream, offset, &i);
+        TEST_ASSERT_EQUAL_INT(1, i);
+        char buffer[1024];
+        offset += cbor_deserialize_byte_string(&stream, offset, buffer);
+        TEST_ASSERT_EQUAL_STRING("a", buffer);
     }
 }
 
@@ -205,6 +236,7 @@ TestRef CborTest_tests(void)
         new_TestFixture(test_major_type_0),
         new_TestFixture(test_major_type_1),
         new_TestFixture(test_major_type_2),
+        new_TestFixture(test_major_type_3),
         new_TestFixture(test_major_type_4),
         new_TestFixture(test_major_type_7),
     };
@@ -212,7 +244,6 @@ TestRef CborTest_tests(void)
     EMB_UNIT_TESTCALLER(CborTest, setUp, tearDown, fixtures);
     return (TestRef)&CborTest;
 }
-
 
 static void manual_test(void)
 {
@@ -224,17 +255,16 @@ static void manual_test(void)
     char* res = (char*)calloc(10, (size_t)1);
     cbor_deserialize_byte_string(&stream, (size_t)0, res);
     printf("\ndeserialized string: %s\n",res);
-
-
-    printf("\n");
-    //free(res);
+    free(res);
     cbor_destroy(&stream);
+
+
 }
 
 int main(void)
 {
     (void)manual_test; // fix unused warning
-    //manual_test();
+    manual_test();
 
     TextUIRunner_setOutputter(TextOutputter_outputter());
     TextUIRunner_start();
