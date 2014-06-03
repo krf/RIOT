@@ -24,9 +24,12 @@
 #include <wchar.h>
 #include <stdlib.h>
 
-#define CBOR_CHECK_SERIALIZE(stream, cbor_serialize_function, input, expected_value) do { \
+#define CBOR_SERIALIZE(stream, cbor_serialize_function, input) do { \
     cbor_clear(&stream); \
     cbor_serialize_function(&stream, input); \
+} while(0)
+
+#define CBOR_CHECK_SERIALIZED(cbor_serialize_function, stream, expected_value) do { \
     unsigned char expected_value_container[] = expected_value; \
     const size_t size = sizeof(expected_value_container); \
     if (memcmp(stream.data, expected_value_container, size) != 0) { \
@@ -37,20 +40,35 @@
     } \
 } while(0)
 
-#define CBOR_CHECK_DESERIALIZE(type, cbor_deserialize_function, input, expected_value, comparator) do { \
+#define CBOR_DESERIALIZE(type, cbor_deserialize_function, input, destination) do { \
     unsigned char data[] = input; \
     cbor_stream_t tmp = {data, sizeof(data), sizeof(data)}; \
-    cbor_deserialize_function(&tmp, 0, &destination); \
-    if (!comparator(expected_value, destination)) { \
+    cbor_deserialize_function(&tmp, 0, destination); \
+} while(0)
+
+#define CBOR_CHECK_DESERIALIZED(cbor_deserialize_function, expected_value, actual_value, comparator_function) do { \
+    if (!comparator_function(expected_value, actual_value)) { \
         TEST_FAIL("Test failed: " #cbor_deserialize_function); \
     } \
 } while(0)
 
 #define CONCAT(...) __VA_ARGS__
 
+/// Macro for checking PODs (int, float, ...)
 #define CBOR_CHECK(type, function_suffix, stream, input, data, comparator) do { \
-    CBOR_CHECK_SERIALIZE(stream, cbor_serialize_##function_suffix, input, CONCAT(data)); \
-    CBOR_CHECK_DESERIALIZE(type, cbor_deserialize_##function_suffix, CONCAT(data), input, comparator); \
+    type buffer; \
+    CBOR_SERIALIZE(stream, cbor_serialize_##function_suffix, input); \
+    CBOR_CHECK_SERIALIZED(cbor_serialize_##function_suffix, stream, CONCAT(data)); \
+    CBOR_DESERIALIZE(type, cbor_deserialize_##function_suffix, CONCAT(data), &buffer); \
+    CBOR_CHECK_DESERIALIZED(cbor_deserialize_##function_suffix, input, buffer, comparator); \
+} while(0)
+
+/// Macro for checking pointer-types. Provide a sufficient large buffer for storing the deserialized result
+#define CBOR_CHECK_POINTERTYPE(type, function_suffix, stream, input, data, buffer, comparator) do { \
+    CBOR_SERIALIZE(stream, cbor_serialize_##function_suffix, input); \
+    CBOR_CHECK_SERIALIZED(cbor_serialize_##function_suffix, stream, CONCAT(data)); \
+    CBOR_DESERIALIZE(type, cbor_deserialize_##function_suffix, CONCAT(data), buffer); \
+    CBOR_CHECK_DESERIALIZED(cbor_deserialize_##function_suffix, input, buffer, comparator); \
 } while(0)
 
 #define HEX_LITERAL(...) {__VA_ARGS__}
@@ -81,8 +99,6 @@ static void tearDown(void)
 static void test_major_type_0(void)
 {
     {
-        int destination;
-
         CBOR_CHECK(int, int, stream, 0,  HEX_LITERAL(0x00), EQUAL_INT);
         CBOR_CHECK(int, int, stream, 23, HEX_LITERAL(0x17), EQUAL_INT);
 
@@ -97,8 +113,6 @@ static void test_major_type_0(void)
     }
 
     {
-        uint64_t destination;
-
         CBOR_CHECK(uint64_t, uint64_t, stream, 0x0,                   HEX_LITERAL(0x00), EQUAL_INT);
         CBOR_CHECK(uint64_t, uint64_t, stream, 0xff,                  HEX_LITERAL(0x18, 0xff), EQUAL_INT);
         CBOR_CHECK(uint64_t, uint64_t, stream, 0xffff,                HEX_LITERAL(0x19, 0xff, 0xff), EQUAL_INT);
@@ -111,8 +125,6 @@ static void test_major_type_0(void)
 static void test_major_type_1(void)
 {
     {
-        int destination;
-
         CBOR_CHECK(int, int, stream, -1,  HEX_LITERAL(0x20), EQUAL_INT);
         CBOR_CHECK(int, int, stream, -24, HEX_LITERAL(0x37), EQUAL_INT);
 
@@ -127,8 +139,6 @@ static void test_major_type_1(void)
     }
 
     {
-        int64_t destination;
-
         CBOR_CHECK(int64_t, int64_t, stream, -1,                      HEX_LITERAL(0x20), EQUAL_INT);
         CBOR_CHECK(int64_t, int64_t, stream, -0xff-1,                 HEX_LITERAL(0x38, 0xff), EQUAL_INT);
         CBOR_CHECK(int64_t, int64_t, stream, -0xffff-1,               HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
@@ -140,26 +150,23 @@ static void test_major_type_1(void)
 static void test_major_type_2(void)
 {
     {
-        char destination[128];
+        char buffer[128];
 
-        CBOR_CHECK(char*, byte_string, stream, "", HEX_LITERAL(0x40), EQUAL_STRING);
-        CBOR_CHECK(char*, byte_string, stream, "a", HEX_LITERAL(0x41, 0x61), EQUAL_STRING);
+        CBOR_CHECK_POINTERTYPE(char*, byte_string, stream, "", HEX_LITERAL(0x40), buffer, EQUAL_STRING);
+        CBOR_CHECK_POINTERTYPE(char*, byte_string, stream, "a", HEX_LITERAL(0x41, 0x61), buffer, EQUAL_STRING);
     }
 }
+
 
 static void test_major_type_7(void)
 {
     {
-        bool destination;
-
         // simple values
         CBOR_CHECK(bool, bool, stream, false, HEX_LITERAL(0xf4), EQUAL_INT);
         CBOR_CHECK(bool, bool, stream, true,  HEX_LITERAL(0xf5), EQUAL_INT);
     }
 
     {
-        float destination;
-
         CBOR_CHECK(float, float, stream, .0f, HEX_LITERAL(0xfa, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, INFINITY, HEX_LITERAL(0xfa, 0x7f, 0x80, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, NAN, HEX_LITERAL(0xfa, 0x7f, 0xc0, 0x00, 0x00), EQUAL_FLOAT);
