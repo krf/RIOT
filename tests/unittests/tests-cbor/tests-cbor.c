@@ -10,11 +10,9 @@
  * @author      Kevin Funk <kevin.funk@fu-berlin.de>
  */
 
-#include "cbor.h"
+#include "../unittests.h"
 
-#include <embUnit/embUnit.h>
-#include <textui/TextUIRunner.h>
-#include <textui/TextOutputter.h>
+#include "cbor.h"
 
 #include <float.h>
 #include <math.h>
@@ -230,7 +228,7 @@ static void test_major_type_7(void)
 /**
  * See examples from CBOR RFC (cf. Appendix A. Examples)
  */
-TestRef CborTest_tests(void)
+TestRef tests_cbor_all(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_major_type_0),
@@ -261,14 +259,10 @@ static void manual_test(void)
 
 }
 
-int main(void)
+void tests_cbor(void)
 {
     (void)manual_test; // fix unused warning
-    manual_test();
+    //manual_test();
 
-    TextUIRunner_setOutputter(TextOutputter_outputter());
-    TextUIRunner_start();
-    TextUIRunner_runTest(CborTest_tests());
-    TextUIRunner_end();
-    return 0;
+    TESTS_RUN(tests_cbor_all());
 }
