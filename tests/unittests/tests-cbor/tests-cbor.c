@@ -306,6 +306,27 @@ static void test_major_type_4(void)
     }
 }
 
+static void test_major_type_4_invalid(void)
+{
+    {
+        // check writing to stream that is not large enough
+        cbor_stream_t stream;
+        cbor_init(&stream, 0);
+
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_array(&stream, 1));
+
+        cbor_destroy(&stream);
+    }
+    {
+        // check reading from stream that contains other type of data
+        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        cbor_stream_t stream = {data, 1, 1};
+
+        uint64_t array_length;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_array(&stream, 0, &array_length));
+    }
+}
+
 static void test_major_type_7(void)
 {
     {
@@ -402,6 +423,7 @@ TestRef tests_cbor_all(void)
         new_TestFixture(test_major_type_3),
         new_TestFixture(test_major_type_3_invalid),
         new_TestFixture(test_major_type_4),
+        new_TestFixture(test_major_type_4_invalid),
         new_TestFixture(test_major_type_7),
         new_TestFixture(test_major_type_7_invalid)
     };

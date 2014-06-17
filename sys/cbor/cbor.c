@@ -547,7 +547,9 @@ size_t cbor_serialize_unicode_string(cbor_stream_t* stream, const char* val)
 size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, uint64_t* array_length)
 {
     assert(array_length);
-    assert(CBOR_TYPE(s, offset) == CBOR_ARRAY);
+    if (CBOR_TYPE(s, offset) != CBOR_ARRAY) {
+        return 0;
+    }
 
     size_t read_bytes = decode_int(s, offset, array_length);
     return read_bytes;
