@@ -360,6 +360,22 @@ static void test_major_type_7(void)
 
     {
         // check border conditions
+        CBOR_CHECK(float, float_half, stream, -.0f, HEX_LITERAL(0xf9, 0x80, 0x00), EQUAL_FLOAT);
+        CBOR_CHECK(float, float_half, stream, .0f, HEX_LITERAL(0xf9, 0x00, 0x00), EQUAL_FLOAT);
+        CBOR_CHECK(float, float_half, stream, INFINITY, HEX_LITERAL(0xf9, 0x7c, 0x00), EQUAL_FLOAT);
+        // TODO: Broken: encode_float_half issue?
+        //CBOR_CHECK(float, float_half, stream, NAN, HEX_LITERAL(0xf9, 0x7e, 0x00), EQUAL_FLOAT);
+        CBOR_CHECK(float, float_half, stream, -INFINITY, HEX_LITERAL(0xf9, 0xfc, 0x00), EQUAL_FLOAT);
+
+        // check examples from the CBOR RFC
+        CBOR_CHECK(float, float_half, stream, -4.f, HEX_LITERAL(0xf9, 0xc4, 0x00), EQUAL_FLOAT);
+        CBOR_CHECK(float, float_half, stream, 1.f, HEX_LITERAL(0xf9, 0x3c, 0x00), EQUAL_FLOAT);
+        CBOR_CHECK(float, float_half, stream, 1.5f, HEX_LITERAL(0xf9, 0x3e, 0x00), EQUAL_FLOAT);
+        CBOR_CHECK(float, float_half, stream, 5.960464477539063e-8, HEX_LITERAL(0xf9, 0x00, 0x01), EQUAL_FLOAT);
+    }
+
+    {
+        // check border conditions
         CBOR_CHECK(float, float, stream, .0f, HEX_LITERAL(0xfa, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, INFINITY, HEX_LITERAL(0xfa, 0x7f, 0x80, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, NAN, HEX_LITERAL(0xfa, 0x7f, 0xc0, 0x00, 0x00), EQUAL_FLOAT);
@@ -394,6 +410,11 @@ static void test_major_type_7_invalid(void)
 
         {
             const size_t written_bytes = cbor_serialize_bool(&stream, true);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+        {
+            const size_t written_bytes = cbor_serialize_float_half(&stream, 0.f);
             TEST_ASSERT_EQUAL_INT(0, written_bytes);
             TEST_ASSERT_EQUAL_INT(0, stream.pos);
         }

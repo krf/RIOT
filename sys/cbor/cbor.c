@@ -443,12 +443,27 @@ size_t cbor_serialize_bool(cbor_stream_t* s, bool val)
 
 size_t cbor_deserialize_float_half(const cbor_stream_t* stream, size_t offset, float* val)
 {
-    return 0;
+    assert(val);
+    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+        return 0;
+    }
+
+    unsigned char* data = &stream->data[offset];
+    if (*data == CBOR_FLOAT16) {
+        *val = (float)decode_float_half(data+1);
+        return 3;
+    } else {
+        return 0;
+    }
 }
 
 size_t cbor_serialize_float_half(cbor_stream_t* s, float val)
 {
-    return 0;
+    CBOR_ENSURE_SIZE(s, 3);
+    s->data[s->pos++] = CBOR_FLOAT16;
+    (*(uint16_t*)(&s->data[s->pos])) = htons(encode_float_half(val));
+    s->pos += 2;
+    return 3;
 }
 
 size_t cbor_deserialize_float(const cbor_stream_t* stream, size_t offset, float* val)
