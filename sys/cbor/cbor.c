@@ -452,9 +452,9 @@ size_t cbor_deserialize_float_half(const cbor_stream_t* stream, size_t offset, f
     if (*data == CBOR_FLOAT16) {
         *val = (float)decode_float_half(data+1);
         return 3;
-    } else {
-        return 0;
     }
+
+    return 0;
 }
 
 size_t cbor_serialize_float_half(cbor_stream_t* s, float val)
@@ -474,9 +474,7 @@ size_t cbor_deserialize_float(const cbor_stream_t* stream, size_t offset, float*
     }
 
     unsigned char* data = &stream->data[offset];
-    if (*data == CBOR_FLOAT16) {
-        return 0; // TODO
-    } else if (*data == CBOR_FLOAT32) {
+    if (*data == CBOR_FLOAT32) {
         *val = ntohf(*(float*)(data+1));
         return 4;
     }

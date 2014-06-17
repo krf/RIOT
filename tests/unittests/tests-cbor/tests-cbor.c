@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <wchar.h>
 #include <stdlib.h>
 
 #define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
