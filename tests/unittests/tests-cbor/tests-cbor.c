@@ -74,16 +74,16 @@
     (strcmp(a, b) == 0)
 // END: Comparator functions
 
-cbor_stream_t stream;
+unsigned char data[1024];
+cbor_stream_t stream = {data, sizeof(data), 0};
 
 static void setUp(void)
 {
-    cbor_init(&stream, 128);
+    cbor_clear(&stream);
 }
 
 static void tearDown(void)
 {
-    cbor_destroy(&stream);
 }
 
 static void test_major_type_0(void)
