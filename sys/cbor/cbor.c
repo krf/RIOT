@@ -463,13 +463,14 @@ size_t cbor_serialize_double(cbor_stream_t* s, double val)
 
 size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val)
 {
-    uint64_t byteStringLen;
-    size_t intLen = decode_int(stream, offset, &byteStringLen); // get byte string length
+    assert(CBOR_TYPE(stream, offset) == CBOR_BYTES);
 
-    memcpy(val, &stream->data[offset+intLen], byteStringLen);
-    val[byteStringLen] = '\0';
-    size_t len = intLen + byteStringLen;
-    return len;
+    uint64_t bytes_length;
+    size_t bytes_start = decode_int(stream, offset, &bytes_length);
+
+    memcpy(val, &stream->data[offset+bytes_start], bytes_length);
+    val[bytes_length] = '\0';
+    return bytes_start+ bytes_length;
 }
 
 void cbor_serialize_byte_string(cbor_stream_t* s, const char* val)
@@ -484,13 +485,14 @@ void cbor_serialize_byte_string(cbor_stream_t* s, const char* val)
 
 size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val)
 {
-    uint64_t byteStringLen;
-    size_t intLen = decode_int(stream, offset, &byteStringLen); // get unicode string length
+    assert(CBOR_TYPE(stream, offset) == CBOR_TEXT);
 
-    memcpy(val, &stream->data[offset+intLen], byteStringLen);
-    val[byteStringLen] = '\0';
-    size_t len = intLen + byteStringLen;
-    return len;
+    uint64_t bytes_length;
+    size_t bytes_start = decode_int(stream, offset, &bytes_length);
+
+    memcpy(val, &stream->data[offset+bytes_start], bytes_length);
+    val[bytes_length] = '\0';
+    return bytes_start+ bytes_length;
 }
 
 void cbor_serialize_unicode_string(cbor_stream_t* s, const char* val)

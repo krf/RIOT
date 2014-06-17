@@ -28,7 +28,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <wchar.h>
 
 typedef struct cbor_stream_t
 {
@@ -36,7 +35,7 @@ typedef struct cbor_stream_t
     unsigned char* data;
     /// Size of the array
     size_t size;
-    /// Index point to the next free byte
+    /// Index to the next free byte
     size_t pos;
 } cbor_stream_t;
 
@@ -61,8 +60,11 @@ size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val);
 size_t cbor_serialize_float(cbor_stream_t* s, float val);
 size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val);
 size_t cbor_serialize_double(cbor_stream_t* s, double val);
+
+// TODO: We need a length parameter for val here
 size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val);
 void cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
+// TODO: We need a length parameter for val here
 size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val);
 void cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
