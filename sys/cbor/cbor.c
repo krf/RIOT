@@ -597,6 +597,24 @@ bool cbor_at_end(const cbor_stream_t* s, size_t offset)
     return s ? offset >= s->pos-1 : true;
 }
 
+
+size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, uint64_t* map_length)
+{
+    assert(map_length);
+    if (CBOR_TYPE(s, offset) != CBOR_MAP) {
+        return 0;
+    }
+
+    size_t read_bytes = decode_int(s, offset, map_length);
+    return read_bytes;
+}
+
+size_t cbor_serialize_map(cbor_stream_t* s, uint64_t map_length)
+{
+    // serialize number of item key-value pairs
+    return encode_int(CBOR_MAP, s, map_length);
+}
+
 // BEGIN: Printers
 void cbor_stream_print(cbor_stream_t* stream)
 {

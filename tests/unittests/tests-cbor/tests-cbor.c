@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
     if (memcmp(stream.data, expected_value, expected_value_size) != 0) { \
@@ -353,6 +354,57 @@ static void test_major_type_4_invalid(void)
     }
 }
 
+static void test_major_type_5(void)
+{
+    cbor_clear(&stream);
+
+    // serialization
+    char a[10] = "abc";
+    char b[10] = "def";
+    TEST_ASSERT(cbor_serialize_map(&stream, 2));
+    TEST_ASSERT(cbor_serialize_int(&stream, 1));
+    TEST_ASSERT(cbor_serialize_byte_string(&stream, a));
+    TEST_ASSERT(cbor_serialize_int(&stream, 2));
+    TEST_ASSERT(cbor_serialize_byte_string(&stream, b));
+    unsigned char data[] = {0xA2, 0x01, 0x43, 0x61, 0x62, 0x63, 0x02, 0x43, 0x64, 0x65, 0x66};
+    CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+
+    // deserialization
+    uint64_t map_length;
+    size_t offset = cbor_deserialize_map(&stream, 0, &map_length);
+    TEST_ASSERT_EQUAL_INT(2, map_length);
+    int i;
+    offset += cbor_deserialize_int(&stream, offset, &i);
+    TEST_ASSERT_EQUAL_INT(1, i);
+    offset += cbor_deserialize_byte_string(&stream, offset, a, (size_t)10);
+    TEST_ASSERT_EQUAL_STRING("abc", a);
+    offset += cbor_deserialize_int(&stream, offset, &i);
+    TEST_ASSERT_EQUAL_INT(2, i);
+    offset += cbor_deserialize_byte_string(&stream, offset, b, (size_t)10);
+    TEST_ASSERT_EQUAL_STRING("def", b);
+}
+
+static void test_major_type_5_invalid(void)
+{
+    {
+        // check writing to stream that is not large enough
+        cbor_stream_t stream;
+        cbor_init(&stream, 0);
+
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_map(&stream, 1));
+
+        cbor_destroy(&stream);
+    }
+    {
+        // check reading from stream that contains other type of data
+        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        cbor_stream_t stream = {data, 1, 1};
+
+        uint64_t map_length;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_map(&stream, 0, &map_length));
+    }
+}
+
 static void test_major_type_7(void)
 {
     {
@@ -450,6 +502,8 @@ TestRef tests_cbor_all(void)
         new_TestFixture(test_major_type_3_invalid),
         new_TestFixture(test_major_type_4),
         new_TestFixture(test_major_type_4_invalid),
+        new_TestFixture(test_major_type_5),
+        new_TestFixture(test_major_type_5_invalid),
         new_TestFixture(test_major_type_7),
         new_TestFixture(test_major_type_7_invalid)
     };
@@ -460,15 +514,6 @@ TestRef tests_cbor_all(void)
 
 static void manual_test(void)
 {
-    // working cbor_(de)serialize_byte_string test:
-    cbor_stream_t stream;
-    cbor_init(&stream, 1024);
-    cbor_serialize_byte_string(&stream, "abc");
-    cbor_stream_print(&stream);
-    char res[1024];
-    cbor_deserialize_byte_string(&stream, (size_t)0, res, sizeof(res));
-    printf("\ndeserialized string: %s\n", res);
-    cbor_destroy(&stream);
 }
 
 void tests_cbor(void)
