@@ -61,12 +61,10 @@ size_t cbor_serialize_float(cbor_stream_t* s, float val);
 size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val);
 size_t cbor_serialize_double(cbor_stream_t* s, double val);
 
-// TODO: We need a length parameter for val here
-size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val);
-void cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
-// TODO: We need a length parameter for val here
-size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val);
-void cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
+size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val, size_t length);
+size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
+size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val, size_t length);
+size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
 void cbor_serialize_array(cbor_stream_t* s, uint64_t array_length);
 size_t cbor_deserialize_array(cbor_stream_t* s, size_t offset, uint64_t* array_length);
