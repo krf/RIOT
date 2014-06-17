@@ -66,7 +66,7 @@ size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
 size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val, size_t length);
 size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
-void cbor_serialize_array(cbor_stream_t* s, uint64_t array_length);
+size_t cbor_serialize_array(cbor_stream_t* s, uint64_t array_length);
 size_t cbor_deserialize_array(cbor_stream_t* s, size_t offset, uint64_t* array_length);
 
 #endif

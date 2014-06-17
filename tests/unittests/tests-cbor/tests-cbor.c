@@ -327,9 +327,9 @@ static void test_major_type_4(void)
         cbor_clear(&stream);
 
         // serialization
-        cbor_serialize_array(&stream, 2);
-        cbor_serialize_int(&stream, 1);
-        cbor_serialize_int(&stream, 2);
+        TEST_ASSERT(cbor_serialize_array(&stream, 2));
+        TEST_ASSERT(cbor_serialize_int(&stream, 1));
+        TEST_ASSERT(cbor_serialize_int(&stream, 2));
         unsigned char data[] = {0x82, 0x01, 0x02};
         CBOR_CHECK_SERIALIZED("serialize_check_uniform_types", stream, data, sizeof(data));
 
@@ -347,9 +347,9 @@ static void test_major_type_4(void)
     // mixed types
     {
         cbor_clear(&stream);
-        cbor_serialize_array(&stream, 2);
-        cbor_serialize_int(&stream, 1);
-        cbor_serialize_byte_string(&stream, "a");
+        TEST_ASSERT(cbor_serialize_array(&stream, 2));
+        TEST_ASSERT(cbor_serialize_int(&stream, 1));
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, "a"));
         unsigned char data[] = {0x82, 0x01, 0x41, 0x61};
         CBOR_CHECK_SERIALIZED("serialize_check_mixed_types", stream, data, sizeof(data));
 

@@ -528,11 +528,10 @@ size_t cbor_deserialize_array(cbor_stream_t* s, size_t offset, uint64_t* array_l
     return read_bytes;
 }
 
-void cbor_serialize_array(cbor_stream_t* s, uint64_t array_length)
+size_t cbor_serialize_array(cbor_stream_t* s, uint64_t array_length)
 {
-    size_t start = s->pos;
-    cbor_serialize_uint64_t(s, array_length); // serialize number of array items
-    s->data[start] = CBOR_ARRAY | (s->data[start] & CBOR_INFO_MASK); // fix major type
+    // serialize number of array items
+    return encode_int(CBOR_ARRAY, s, array_length);
 }
 
 // BEGIN: Printers
