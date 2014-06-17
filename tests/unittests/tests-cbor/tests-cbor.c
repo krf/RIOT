@@ -122,6 +122,51 @@ static void test_major_type_0(void)
     }
 }
 
+static void test_major_type_0_invalid(void)
+{
+    {
+        // check writing to stream that is not large enough
+        // basically tests internal 'encode_int' function
+
+        cbor_stream_t stream;
+        cbor_init(&stream, 0);
+
+        // check each possible branch in 'encode_int'
+        // (value in first byte, uint8 follows, uint16 follows, uint64 follows)
+        {
+            const size_t written_bytes = cbor_serialize_int(&stream, 0);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+        {
+            const size_t written_bytes = cbor_serialize_int(&stream, 24);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+        {
+            const size_t written_bytes = cbor_serialize_int(&stream, 0xff+1);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+        {
+            const size_t written_bytes = cbor_serialize_int(&stream, 0xffff+1);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+
+        // let's do this for 'cbor_serialize_int64_t', too
+        // this uses 'encode_int' internally, as well, so let's just test if the
+        // 'cbor_serialize_int64_t' wrapper is sane
+        {
+            const size_t written_bytes = cbor_serialize_uint64_t(&stream, 0);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+
+        cbor_destroy(&stream);
+    }
+}
+
 static void test_major_type_1(void)
 {
     {
@@ -144,6 +189,24 @@ static void test_major_type_1(void)
         CBOR_CHECK(int64_t, int64_t, stream, -0xffff-1,               HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
         CBOR_CHECK(int64_t, int64_t, stream, -0xffffffffll-1,         HEX_LITERAL(0x3a, 0xff, 0xff, 0xff, 0xff), EQUAL_INT);
         CBOR_CHECK(int64_t, int64_t, stream, -0x7fffffffffffffffll-1, HEX_LITERAL(0x3b, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff), EQUAL_INT);
+    }
+}
+
+static void test_major_type_1_invalid(void)
+{
+    {
+        // check writing to stream that is not large enough (also see test_major_type_0_invalid)
+
+        cbor_stream_t stream;
+        cbor_init(&stream, 0);
+
+        {
+            const size_t written_bytes = cbor_serialize_int64_t(&stream, 0);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+
+        cbor_destroy(&stream);
     }
 }
 
@@ -245,6 +308,34 @@ static void test_major_type_7(void)
     }
 }
 
+static void test_major_type_7_invalid(void)
+{
+    {
+        // check writing to stream that is not large enough
+
+        cbor_stream_t stream;
+        cbor_init(&stream, 0);
+
+        {
+            const size_t written_bytes = cbor_serialize_bool(&stream, true);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+        {
+            const size_t written_bytes = cbor_serialize_float(&stream, 0.f);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+        {
+            const size_t written_bytes = cbor_serialize_double(&stream, 0);
+            TEST_ASSERT_EQUAL_INT(0, written_bytes);
+            TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        }
+
+        cbor_destroy(&stream);
+    }
+}
+
 /**
  * See examples from CBOR RFC (cf. Appendix A. Examples)
  */
@@ -252,11 +343,14 @@ TestRef tests_cbor_all(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_major_type_0),
+        new_TestFixture(test_major_type_0_invalid),
         new_TestFixture(test_major_type_1),
+        new_TestFixture(test_major_type_1_invalid),
         new_TestFixture(test_major_type_2),
         new_TestFixture(test_major_type_3),
         new_TestFixture(test_major_type_4),
         new_TestFixture(test_major_type_7),
+        new_TestFixture(test_major_type_7_invalid)
     };
 
     EMB_UNIT_TESTCALLER(CborTest, setUp, tearDown, fixtures);

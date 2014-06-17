@@ -64,6 +64,11 @@
 #define CBOR_TYPE(stream, offset) (stream->data[offset] & CBOR_TYPE_MASK)
 #define CBOR_ADDITIONAL_INFO(stream, offset) (stream->data[offset] & CBOR_INFO_MASK)
 
+/// Ensure that @p stream is big enough to fit @p bytes bytes, otherwise return 0
+#define CBOR_ENSURE_SIZE(stream, bytes) do { \
+    if (stream->pos + bytes >= stream->size) { return 0; } \
+} while(0)
+
 // Extra defines not related to the protocol itself
 #define CBOR_STREAM_PRINT_BUFFERSIZE 1024 // bytes
 
@@ -233,26 +238,35 @@ void cbor_destroy(cbor_stream_t* stream)
     stream->pos = 0;
 }
 
-static void encode_int(unsigned char major_type, cbor_stream_t* s, uint64_t val)
+static size_t encode_int(unsigned char major_type, cbor_stream_t* s, uint64_t val)
 {
     assert(s);
 
     if (val <= 23) {
+        CBOR_ENSURE_SIZE(s, 1);
         s->data[s->pos++] = major_type | val;
+        return 1;
     } else if (val <= 0xff) {
+        CBOR_ENSURE_SIZE(s, 2);
         s->data[s->pos++] = major_type | CBOR_UINT8_FOLLOWS;
         s->data[s->pos++] = val & 0xff;
+        return 2;
     } else if (val <= 0xffff) {
+        CBOR_ENSURE_SIZE(s, 3);
         s->data[s->pos++] = major_type | CBOR_UINT16_FOLLOWS;
         s->data[s->pos++] = (val >> 8) & 0xff;
         s->data[s->pos++] = val & 0xff;
+        return 3;
     } else if (val <= 0xffffffffL) {
+        CBOR_ENSURE_SIZE(s, 5);
         s->data[s->pos++] = major_type | CBOR_UINT32_FOLLOWS;
         s->data[s->pos++] = (val >> 24) & 0xff;
         s->data[s->pos++] = (val >> 16) & 0xff;
         s->data[s->pos++] = (val >>  8) & 0xff;
         s->data[s->pos++] = val & 0xff;
+        return 5;
     } else {
+        CBOR_ENSURE_SIZE(s, 9);
         s->data[s->pos++] = major_type | CBOR_UINT64_FOLLOWS;
         s->data[s->pos++] = (val >> 56) & 0xff;
         s->data[s->pos++] = (val >> 48) & 0xff;
@@ -262,6 +276,7 @@ static void encode_int(unsigned char major_type, cbor_stream_t* s, uint64_t val)
         s->data[s->pos++] = (val >> 16) & 0xff;
         s->data[s->pos++] = (val >>  8) & 0xff;
         s->data[s->pos++] = val & 0xff;
+        return 9;
     }
 }
 
@@ -321,14 +336,14 @@ size_t cbor_deserialize_int(cbor_stream_t* stream, size_t offset, int* val)
     return read_bytes;
 }
 
-void cbor_serialize_int(cbor_stream_t* s, int val)
+size_t cbor_serialize_int(cbor_stream_t* s, int val)
 {
     if (val >= 0) {
         // Major type 0: an unsigned integer
-        encode_int(CBOR_UINT, s, val);
+        return encode_int(CBOR_UINT, s, val);
     } else {
         // Major type 1: an negative integer
-        encode_int(CBOR_NEGINT, s, -1 -val);
+        return encode_int(CBOR_NEGINT, s, -1 -val);
     }
 }
 
@@ -339,9 +354,9 @@ size_t cbor_deserialize_uint64_t(cbor_stream_t* stream, size_t offset, uint64_t*
     return decode_int(stream, offset, val);
 }
 
-void cbor_serialize_uint64_t(cbor_stream_t* s, uint64_t val)
+size_t cbor_serialize_uint64_t(cbor_stream_t* s, uint64_t val)
 {
-    encode_int(CBOR_UINT, s, val);
+    return encode_int(CBOR_UINT, s, val);
 }
 
 size_t cbor_deserialize_int64_t(cbor_stream_t* stream, size_t offset, int64_t* val)
@@ -359,14 +374,14 @@ size_t cbor_deserialize_int64_t(cbor_stream_t* stream, size_t offset, int64_t* v
     return read_bytes;
 }
 
-void cbor_serialize_int64_t(cbor_stream_t* s, int64_t val)
+size_t cbor_serialize_int64_t(cbor_stream_t* s, int64_t val)
 {
     if (val >= 0) {
         // Major type 0: an unsigned integer
-        encode_int(CBOR_UINT, s, val);
+        return encode_int(CBOR_UINT, s, val);
     } else {
         // Major type 1: an negative integer
-        encode_int(CBOR_NEGINT, s, -1 -val);
+        return encode_int(CBOR_NEGINT, s, -1 -val);
     }
 }
 
@@ -380,9 +395,11 @@ size_t cbor_deserialize_bool(cbor_stream_t* stream, size_t offset, bool* val)
     return 1;
 }
 
-void cbor_serialize_bool(cbor_stream_t* s, bool val)
+size_t cbor_serialize_bool(cbor_stream_t* s, bool val)
 {
+    CBOR_ENSURE_SIZE(s, 1);
     s->data[s->pos++] = val ? CBOR_TRUE : CBOR_FALSE;
+    return 1;
 }
 
 size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val)
@@ -401,11 +418,13 @@ size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val)
     return 0;
 }
 
-void cbor_serialize_float(cbor_stream_t* s, float val)
+size_t cbor_serialize_float(cbor_stream_t* s, float val)
 {
+    CBOR_ENSURE_SIZE(s, 5);
     s->data[s->pos++] = CBOR_FLOAT32;
     (*(float*)(&s->data[s->pos])) = htonf(val);
     s->pos += 4;
+    return 5;
 }
 
 size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val)
@@ -424,11 +443,13 @@ size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val
     return 0;
 }
 
-void cbor_serialize_double(cbor_stream_t* s, double val)
+size_t cbor_serialize_double(cbor_stream_t* s, double val)
 {
+    CBOR_ENSURE_SIZE(s, 9);
     s->data[s->pos++] = CBOR_FLOAT64;
     (*(double*)(&s->data[s->pos])) = htond(val);
     s->pos += 8;
+    return 9;
 }
 
 size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val)
