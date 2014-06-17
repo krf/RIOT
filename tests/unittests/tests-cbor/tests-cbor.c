@@ -41,7 +41,9 @@
 #define CBOR_DESERIALIZE(type, cbor_deserialize_function, input, destination) do { \
     unsigned char data[] = input; \
     cbor_stream_t tmp = {data, sizeof(data), sizeof(data)}; \
-    cbor_deserialize_function(&tmp, 0, destination); \
+    if (!cbor_deserialize_function(&tmp, 0, destination)) { \
+        TEST_FAIL("Test failed: " #cbor_deserialize_function); \
+    } \
 } while(0)
 
 #define CBOR_CHECK_DESERIALIZED(test_id, expected_value, actual_value, comparator_function) do { \
@@ -56,17 +58,17 @@
 #define CBOR_CHECK(type, function_suffix, stream, input, data, comparator) do { \
     type buffer; \
     CBOR_SERIALIZE(stream, cbor_serialize_##function_suffix, input); \
-    CBOR_CHECK_SERIALIZED("cbor_serialize_##function_suffix", stream, CONCAT(data)); \
+    CBOR_CHECK_SERIALIZED("cbor_serialize_" #function_suffix, stream, CONCAT(data)); \
     CBOR_DESERIALIZE(type, cbor_deserialize_##function_suffix, CONCAT(data), &buffer); \
-    CBOR_CHECK_DESERIALIZED("cbor_deserialize_##function_suffix", input, buffer, comparator); \
+    CBOR_CHECK_DESERIALIZED("cbor_serialize_" #function_suffix, input, buffer, comparator); \
 } while(0)
 
 /// Macro for checking pointer-types. Provide a sufficient large buffer for storing the deserialized result
 #define CBOR_CHECK_POINTERTYPE(type, function_suffix, stream, input, data, buffer, comparator) do { \
     CBOR_SERIALIZE(stream, cbor_serialize_##function_suffix, input); \
-    CBOR_CHECK_SERIALIZED("cbor_serialize_##function_suffix", stream, CONCAT(data)); \
+    CBOR_CHECK_SERIALIZED("cbor_serialize_" #function_suffix, stream, CONCAT(data)); \
     CBOR_DESERIALIZE(type, cbor_deserialize_##function_suffix, CONCAT(data), buffer); \
-    CBOR_CHECK_DESERIALIZED("cbor_deserialize_##function_suffix", input, buffer, comparator); \
+    CBOR_CHECK_DESERIALIZED("cbor_serialize_" #function_suffix, input, buffer, comparator); \
 } while(0)
 
 #define HEX_LITERAL(...) {__VA_ARGS__}
