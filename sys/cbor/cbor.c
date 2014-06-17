@@ -324,7 +324,9 @@ static size_t decode_int(cbor_stream_t* s, size_t offset, uint64_t* val)
 size_t cbor_deserialize_int(cbor_stream_t* stream, size_t offset, int* val)
 {
     assert(val);
-    assert(CBOR_TYPE(stream, offset) == CBOR_UINT || CBOR_TYPE(stream, offset) == CBOR_NEGINT);
+    if (CBOR_TYPE(stream, offset) != CBOR_UINT && CBOR_TYPE(stream, offset) != CBOR_NEGINT) {
+        return 0;
+    }
 
     uint64_t buf;
     size_t read_bytes = decode_int(stream, offset, &buf);
@@ -350,7 +352,10 @@ size_t cbor_serialize_int(cbor_stream_t* s, int val)
 size_t cbor_deserialize_uint64_t(cbor_stream_t* stream, size_t offset, uint64_t* val)
 {
     assert(val);
-    assert(CBOR_TYPE(stream, offset) == CBOR_UINT);
+    if (CBOR_TYPE(stream, offset) != CBOR_UINT) {
+        return 0;
+    }
+
     return decode_int(stream, offset, val);
 }
 
@@ -362,7 +367,9 @@ size_t cbor_serialize_uint64_t(cbor_stream_t* s, uint64_t val)
 size_t cbor_deserialize_int64_t(cbor_stream_t* stream, size_t offset, int64_t* val)
 {
     assert(val);
-    assert(CBOR_TYPE(stream, offset) == CBOR_UINT || CBOR_TYPE(stream, offset) == CBOR_NEGINT);
+    if (CBOR_TYPE(stream, offset) != CBOR_UINT && CBOR_TYPE(stream, offset) != CBOR_NEGINT) {
+        return 0;
+    }
 
     uint64_t buf;
     size_t read_bytes = decode_int(stream, offset, &buf);
@@ -405,7 +412,9 @@ size_t cbor_serialize_bool(cbor_stream_t* s, bool val)
 size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val)
 {
     assert(val);
-    assert(CBOR_TYPE(stream, offset) == CBOR_7);
+    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+        return 0;
+    }
 
     unsigned char* data = &stream->data[offset];
     if (*data == CBOR_FLOAT16) {
@@ -430,14 +439,14 @@ size_t cbor_serialize_float(cbor_stream_t* s, float val)
 size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val)
 {
     assert(val);
-    assert(CBOR_TYPE(stream, offset) == CBOR_7);
+    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+        return 0;
+    }
 
     unsigned char* data = &stream->data[offset];
     if (*data == CBOR_FLOAT64) {
         *val = ntohd(*(double*)(data+1));
-        return 1+8;
-    } else {
-        assert(false); // FIXME
+        return 9;
     }
 
     return 0;

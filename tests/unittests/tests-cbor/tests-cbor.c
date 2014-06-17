@@ -165,6 +165,24 @@ static void test_major_type_0_invalid(void)
 
         cbor_destroy(&stream);
     }
+
+    {
+        // check reading from stream that contains other type of data
+
+        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        cbor_stream_t stream = {data, 1, 1};
+
+        {
+            int val = 0;
+            const size_t read_bytes = cbor_deserialize_int(&stream, 0, &val);
+            TEST_ASSERT_EQUAL_INT(0, read_bytes);
+        }
+        {
+            uint64_t val = 0;
+            const size_t read_bytes = cbor_deserialize_uint64_t(&stream, 0, &val);
+            TEST_ASSERT_EQUAL_INT(0, read_bytes);
+        }
+    }
 }
 
 static void test_major_type_1(void)
@@ -207,6 +225,19 @@ static void test_major_type_1_invalid(void)
         }
 
         cbor_destroy(&stream);
+    }
+
+    {
+        // check reading from stream that contains other type of data
+
+        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        cbor_stream_t stream = {data, 1, 1};
+
+        {
+            int64_t val = 0;
+            const size_t read_bytes = cbor_deserialize_int64_t(&stream, 0, &val);
+            TEST_ASSERT_EQUAL_INT(0, read_bytes);
+        }
     }
 }
 
@@ -333,6 +364,24 @@ static void test_major_type_7_invalid(void)
         }
 
         cbor_destroy(&stream);
+    }
+
+    {
+        // check reading from stream that contains other type of data
+
+        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        cbor_stream_t stream = {data, 1, 1};
+
+        {
+            float val = 0;
+            const size_t read_bytes = cbor_deserialize_float(&stream, 0, &val);
+            TEST_ASSERT_EQUAL_INT(0, read_bytes);
+        }
+        {
+            double val = 0;
+            const size_t read_bytes = cbor_deserialize_double(&stream, 0, &val);
+            TEST_ASSERT_EQUAL_INT(0, read_bytes);
+        }
     }
 }
 
