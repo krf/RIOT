@@ -29,6 +29,24 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * @brief Struct containing CBOR-encoded data
+ *
+ * A typical usage of CBOR looks like:
+ * @code{.cpp}
+ * cbor_stream_t stream;
+ * cbor_init(&stream, 1024); // allocate array with 1024 bytes
+ *
+ * cbor_serialize_int(&stream, 5);
+ * <do something with 'stream.data'>
+ *
+ * cbor_destroy(&stream);
+ * @endcode
+ *
+ * @sa cbor_init
+ * @sa cbor_clear
+ * @sa cbor_destroy
+ */
 typedef struct cbor_stream_t
 {
     /// Array containing CBOR encoded data
@@ -39,13 +57,35 @@ typedef struct cbor_stream_t
     size_t pos;
 } cbor_stream_t;
 
+/**
+ * Initialize cbor struct
+ *
+ * @param size The size in bytes that should be allocated for this struct
+ */
 void cbor_init(cbor_stream_t* stream, size_t size);
+
+/**
+ * Clear cbor struct
+ *
+ * Sets pos to zero
+ */
 void cbor_clear(cbor_stream_t* stream);
+
+/**
+ * Free memory hold by the cbor struct
+ *
+ * Frees memory hold by stream->data and resets the struct
+ */
 void cbor_destroy(cbor_stream_t* stream);
 
-/// Print @p stream in CBOR representation
+/**
+ * Print @p stream in hex representation
+ */
 void cbor_stream_print(cbor_stream_t* stream);
-/// Decode CBOR from @p stream
+
+/**
+ * Decode CBOR from @p stream
+ */
 void cbor_stream_decode(cbor_stream_t* stream);
 
 size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val);
