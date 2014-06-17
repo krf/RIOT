@@ -22,30 +22,17 @@
 #include <wchar.h>
 #include <stdlib.h>
 
-#define CBOR_SERIALIZE(stream, cbor_serialize_function, input) do { \
-    cbor_clear(&stream); \
-    cbor_serialize_function(&stream, input); \
-} while(0)
-
-#define CBOR_CHECK_SERIALIZED(test_id, stream, expected_value_container, size) do { \
-    if (memcmp(stream.data, expected_value_container, size) != 0) { \
+#define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
+    if (memcmp(stream.data, expected_value, expected_value_size) != 0) { \
         printf("  CBOR encoded data: "); cbor_stream_print(&stream); printf("\n"); \
-        cbor_stream_t tmp = {expected_value_container, size, size}; \
+        cbor_stream_t tmp = {expected_value, expected_value_size, expected_value_size}; \
         printf("  Expected data    : "); cbor_stream_print(&tmp); printf("\n"); \
-        TEST_FAIL("Test failed: " test_id); \
+        TEST_FAIL("Test failed"); \
     } \
 } while(0)
 
-#define CBOR_DESERIALIZE(type, cbor_deserialize_function, stream, destination) do { \
-    if (!cbor_deserialize_function(stream, 0, destination)) { \
-        TEST_FAIL("Test failed: " #cbor_deserialize_function); \
-    } \
-} while(0)
-
-#define CBOR_CHECK_DESERIALIZED(test_id, expected_value, actual_value, comparator_function) do { \
-    if (!comparator_function(expected_value, actual_value)) { \
-        TEST_FAIL("Test failed: " test_id); \
-    } \
+#define CBOR_CHECK_DESERIALIZED(expected_value, actual_value, comparator_function) do { \
+    TEST_ASSERT(comparator_function(expected_value, actual_value)); \
 } while(0)
 
 #define CONCAT(...) __VA_ARGS__
@@ -54,11 +41,12 @@
 #define CBOR_CHECK(type, function_suffix, stream, input, expected_value, comparator) do { \
     type buffer; \
     unsigned char data[] = expected_value; \
-    CBOR_SERIALIZE(stream, cbor_serialize_##function_suffix, input); \
-    CBOR_CHECK_SERIALIZED("cbor_serialize_" #function_suffix, stream, data, sizeof(data)); \
+    cbor_clear(&stream); \
+    TEST_ASSERT(cbor_serialize_##function_suffix(&stream, input)); \
+    CBOR_CHECK_SERIALIZED(stream, data, sizeof(data)); \
     cbor_stream_t tmp = {data, sizeof(data), sizeof(data)}; \
-    CBOR_DESERIALIZE(type, cbor_deserialize_##function_suffix, &tmp, &buffer); \
-    CBOR_CHECK_DESERIALIZED("cbor_serialize_" #function_suffix, input, buffer, comparator); \
+    TEST_ASSERT(cbor_deserialize_##function_suffix(&tmp, 0, &buffer)); \
+    CBOR_CHECK_DESERIALIZED(input, buffer, comparator); \
 } while(0)
 
 #define HEX_LITERAL(...) {__VA_ARGS__}
@@ -236,25 +224,23 @@ static void test_major_type_2(void)
     char buffer[128];
 
     {
+        cbor_clear(&stream);
         const char* input = "";
         unsigned char data[] = {0x40};
-        CBOR_SERIALIZE(stream, cbor_serialize_byte_string, input);
-        CBOR_CHECK_SERIALIZED("cbor_serialize_byte_string", stream, data, sizeof(data));
-        if (!cbor_deserialize_byte_string(&stream, 0, buffer, sizeof(buffer))) {
-            TEST_FAIL("Test failed: cbor_deserialize_byte_string");
-        }
-        CBOR_CHECK_DESERIALIZED("cbor_serialize_byte_string", input, buffer, EQUAL_STRING);
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, input));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+        TEST_ASSERT(cbor_deserialize_byte_string(&stream, 0, buffer, sizeof(buffer)));
+        CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
 
     {
+        cbor_clear(&stream);
         const char* input = "a";
         unsigned char data[] = {0x41, 0x61};
-        CBOR_SERIALIZE(stream, cbor_serialize_byte_string, input);
-        CBOR_CHECK_SERIALIZED("cbor_serialize_byte_string", stream, data, sizeof(data));
-        if (!cbor_deserialize_byte_string(&stream, 0, buffer, sizeof(buffer))) {
-            TEST_FAIL("Test failed: cbor_deserialize_byte_string");
-        }
-        CBOR_CHECK_DESERIALIZED("cbor_serialize_byte_string", input, buffer, EQUAL_STRING);
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, input));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+        TEST_ASSERT(cbor_deserialize_byte_string(&stream, 0, buffer, sizeof(buffer)));
+        CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
 }
 
@@ -281,25 +267,23 @@ static void test_major_type_3(void)
     char buffer[128];
 
     {
+        cbor_clear(&stream);
         const char* input = "";
         unsigned char data[] = {0x60};
-        CBOR_SERIALIZE(stream, cbor_serialize_unicode_string, input);
-        CBOR_CHECK_SERIALIZED("cbor_serialize_unicode_string", stream, data, sizeof(data));
-        if (!cbor_deserialize_unicode_string(&stream, 0, buffer, sizeof(buffer))) {
-            TEST_FAIL("Test failed: cbor_deserialize_unicode_string");
-        }
-        CBOR_CHECK_DESERIALIZED("cbor_serialize_unicode_string", input, buffer, EQUAL_STRING);
+        TEST_ASSERT(cbor_serialize_unicode_string(&stream, input));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+        TEST_ASSERT(cbor_deserialize_unicode_string(&stream, 0, buffer, sizeof(buffer)));
+        CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
 
     {
+        cbor_clear(&stream);
         const char* input = "a";
         unsigned char data[] = {0x61, 0x61};
-        CBOR_SERIALIZE(stream, cbor_serialize_unicode_string, input);
-        CBOR_CHECK_SERIALIZED("cbor_serialize_unicode_string", stream, data, sizeof(data));
-        if (!cbor_deserialize_unicode_string(&stream, 0, buffer, sizeof(buffer))) {
-            TEST_FAIL("Test failed: cbor_deserialize_unicode_string");
-        }
-        CBOR_CHECK_DESERIALIZED("cbor_serialize_unicode_string", input, buffer, EQUAL_STRING);
+        TEST_ASSERT(cbor_serialize_unicode_string(&stream, input));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+        TEST_ASSERT(cbor_deserialize_unicode_string(&stream, 0, buffer, sizeof(buffer)));
+        CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
 }
 
@@ -331,7 +315,7 @@ static void test_major_type_4(void)
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_int(&stream, 2));
         unsigned char data[] = {0x82, 0x01, 0x02};
-        CBOR_CHECK_SERIALIZED("serialize_check_uniform_types", stream, data, sizeof(data));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
         // deserialization
         uint64_t array_length;
@@ -351,7 +335,7 @@ static void test_major_type_4(void)
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "a"));
         unsigned char data[] = {0x82, 0x01, 0x41, 0x61};
-        CBOR_CHECK_SERIALIZED("serialize_check_mixed_types", stream, data, sizeof(data));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
         // deserialization
         uint64_t array_length;
