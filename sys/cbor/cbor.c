@@ -88,6 +88,48 @@ static float ntohf(float x)
 }
 
 /**
+ * Convert long long @p x to network format
+ */
+static uint64_t htonll(uint64_t x)
+{
+    return (((uint64_t)htonl(x)) << 32) + htonl(x >> 32);
+}
+
+/**
+ * Convert long long @p x to host format
+ */
+static uint64_t ntohll(uint64_t x)
+{
+    return (((uint64_t)ntohl(x)) << 32) + ntohl(x >> 32);
+}
+
+/**
+ * Convert double @p x to network format
+ */
+static double htond(double x)
+{
+   double res;
+   uint64_t* in = (uint64_t*)&x;
+   uint64_t* out = (uint64_t*)&res;
+
+   out[0] = htonll(in[0]);
+   return res;
+}
+
+/**
+ * Convert double @p x to host format
+ */
+static double ntohd(double x)
+{
+   double res;
+   uint64_t* in = (uint64_t*)&x;
+   uint64_t* out = (uint64_t*)&res;
+
+   out[0] = ntohll(in[0]);
+   return res;
+}
+
+/**
  * Source: CBOR RFC reference implementation
  */
 double decode_float_half(unsigned char *halfp)
@@ -364,6 +406,29 @@ void cbor_serialize_float(cbor_stream_t* s, float val)
     s->data[s->pos++] = CBOR_FLOAT32;
     (*(float*)(&s->data[s->pos])) = htonf(val);
     s->pos += 4;
+}
+
+size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val)
+{
+    assert(val);
+    assert(CBOR_TYPE(stream, offset) == CBOR_7);
+
+    unsigned char* data = &stream->data[offset];
+    if (*data == CBOR_FLOAT64) {
+        *val = ntohd(*(double*)(data+1));
+        return 1+8;
+    } else {
+        assert(false); // FIXME
+    }
+
+    return 0;
+}
+
+void cbor_serialize_double(cbor_stream_t* s, double val)
+{
+    s->data[s->pos++] = CBOR_FLOAT64;
+    (*(double*)(&s->data[s->pos])) = htond(val);
+    s->pos += 8;
 }
 
 size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val)

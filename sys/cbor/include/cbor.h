@@ -59,6 +59,8 @@ size_t cbor_deserialize_bool(cbor_stream_t* stream, size_t offset, bool* val);
 void cbor_serialize_bool(cbor_stream_t* s, bool val);
 size_t cbor_deserialize_float(cbor_stream_t* stream, size_t offset, float* val);
 void cbor_serialize_float(cbor_stream_t* s, float val);
+size_t cbor_deserialize_double(cbor_stream_t* stream, size_t offset, double* val);
+void cbor_serialize_double(cbor_stream_t* s, double val);
 size_t cbor_deserialize_byte_string(cbor_stream_t* stream, size_t offset, char* val);
 void cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
 size_t cbor_deserialize_unicode_string(cbor_stream_t* stream, size_t offset, char* val);
