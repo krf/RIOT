@@ -427,9 +427,11 @@ size_t cbor_serialize_int64_t(cbor_stream_t* s, int64_t val)
 size_t cbor_deserialize_bool(const cbor_stream_t* stream, size_t offset, bool* val)
 {
     assert(val);
-    assert(CBOR_TYPE(stream, offset) == CBOR_7);
-    unsigned char byte = stream->data[offset];
+    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+        return 0;
+    }
 
+    unsigned char byte = stream->data[offset];
     *val = (byte == CBOR_TRUE);
     return 1;
 }

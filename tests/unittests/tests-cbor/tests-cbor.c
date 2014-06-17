@@ -34,8 +34,6 @@
     TEST_ASSERT(comparator_function(expected_value, actual_value)); \
 } while(0)
 
-#define CONCAT(...) __VA_ARGS__
-
 /// Macro for checking PODs (int, float, ...)
 #define CBOR_CHECK(type, function_suffix, stream, input, expected_value, comparator) do { \
     type buffer; \
@@ -88,7 +86,6 @@ static void test_major_type_0(void)
         CBOR_CHECK(int, int, stream, 0xffff+1,   HEX_LITERAL(0x1a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
         CBOR_CHECK(int, int, stream, 0x7fffffff, HEX_LITERAL(0x1a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
     }
-
     {
         CBOR_CHECK(uint64_t, uint64_t, stream, 0x0,                   HEX_LITERAL(0x00), EQUAL_INT);
         CBOR_CHECK(uint64_t, uint64_t, stream, 0xff,                  HEX_LITERAL(0x18, 0xff), EQUAL_INT);
@@ -110,55 +107,32 @@ static void test_major_type_0_invalid(void)
 
         // check each possible branch in 'encode_int'
         // (value in first byte, uint8 follows, uint16 follows, uint64 follows)
-        {
-            const size_t written_bytes = cbor_serialize_int(&stream, 0);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
-        {
-            const size_t written_bytes = cbor_serialize_int(&stream, 24);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
-        {
-            const size_t written_bytes = cbor_serialize_int(&stream, 0xff+1);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
-        {
-            const size_t written_bytes = cbor_serialize_int(&stream, 0xffff+1);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 24));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xff+1));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xffff+1));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
         // let's do this for 'cbor_serialize_int64_t', too
         // this uses 'encode_int' internally, as well, so let's just test if the
         // 'cbor_serialize_int64_t' wrapper is sane
-        {
-            const size_t written_bytes = cbor_serialize_uint64_t(&stream, 0);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_uint64_t(&stream, 0));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
         cbor_destroy(&stream);
     }
-
     {
         // check reading from stream that contains other type of data
-
         unsigned char data[] = {0x40}; // empty string encoded in CBOR
         cbor_stream_t stream = {data, 1, 1};
 
-        {
-            int val = 0;
-            const size_t read_bytes = cbor_deserialize_int(&stream, 0, &val);
-            TEST_ASSERT_EQUAL_INT(0, read_bytes);
-        }
-        {
-            uint64_t val = 0;
-            const size_t read_bytes = cbor_deserialize_uint64_t(&stream, 0, &val);
-            TEST_ASSERT_EQUAL_INT(0, read_bytes);
-        }
+        int val_int = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_int(&stream, 0, &val_int ));
+        uint64_t val_uint64_t = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_uint64_t(&stream, 0, &val_uint64_t));
     }
 }
 
@@ -177,7 +151,6 @@ static void test_major_type_1(void)
         CBOR_CHECK(int, int, stream, -0xffff-2,     HEX_LITERAL(0x3a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
         CBOR_CHECK(int, int, stream, -0x7fffffff-1, HEX_LITERAL(0x3a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
     }
-
     {
         CBOR_CHECK(int64_t, int64_t, stream, -1,                      HEX_LITERAL(0x20), EQUAL_INT);
         CBOR_CHECK(int64_t, int64_t, stream, -0xff-1,                 HEX_LITERAL(0x38, 0xff), EQUAL_INT);
@@ -195,11 +168,8 @@ static void test_major_type_1_invalid(void)
         cbor_stream_t stream;
         cbor_init(&stream, 0);
 
-        {
-            const size_t written_bytes = cbor_serialize_int64_t(&stream, 0);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int64_t(&stream, 0));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
         cbor_destroy(&stream);
     }
@@ -210,11 +180,8 @@ static void test_major_type_1_invalid(void)
         unsigned char data[] = {0x40}; // empty string encoded in CBOR
         cbor_stream_t stream = {data, 1, 1};
 
-        {
-            int64_t val = 0;
-            const size_t read_bytes = cbor_deserialize_int64_t(&stream, 0, &val);
-            TEST_ASSERT_EQUAL_INT(0, read_bytes);
-        }
+        int64_t val = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_int64_t(&stream, 0, &val));
     }
 }
 
@@ -231,7 +198,6 @@ static void test_major_type_2(void)
         TEST_ASSERT(cbor_deserialize_byte_string(&stream, 0, buffer, sizeof(buffer)));
         CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
-
     {
         cbor_clear(&stream);
         const char* input = "a";
@@ -247,14 +213,10 @@ static void test_major_type_2_invalid(void)
 {
     {
         // check writing to stream that is not large enough
-
         cbor_stream_t stream;
         cbor_init(&stream, 0);
 
-        {
-            const size_t written_bytes = cbor_serialize_byte_string(&stream, "foo");
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-        }
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_byte_string(&stream, "foo"));
 
         cbor_destroy(&stream);
     }
@@ -274,7 +236,6 @@ static void test_major_type_3(void)
         TEST_ASSERT(cbor_deserialize_unicode_string(&stream, 0, buffer, sizeof(buffer)));
         CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
-
     {
         cbor_clear(&stream);
         const char* input = "a";
@@ -290,14 +251,10 @@ static void test_major_type_3_invalid(void)
 {
     {
         // check writing to stream that is not large enough
-
         cbor_stream_t stream;
         cbor_init(&stream, 0);
 
-        {
-            const size_t written_bytes = cbor_serialize_unicode_string(&stream, "foo");
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-        }
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_unicode_string(&stream, "foo"));
 
         cbor_destroy(&stream);
     }
@@ -326,10 +283,10 @@ static void test_major_type_4(void)
         offset += cbor_deserialize_int(&stream, offset, &i);
         TEST_ASSERT_EQUAL_INT(2, i);
     }
-
     // mixed types
     {
         cbor_clear(&stream);
+
         TEST_ASSERT(cbor_serialize_array(&stream, 2));
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "a"));
@@ -356,7 +313,6 @@ static void test_major_type_7(void)
         CBOR_CHECK(bool, bool, stream, false, HEX_LITERAL(0xf4), EQUAL_INT);
         CBOR_CHECK(bool, bool, stream, true,  HEX_LITERAL(0xf5), EQUAL_INT);
     }
-
     {
         // check border conditions
         CBOR_CHECK(float, float_half, stream, -.0f, HEX_LITERAL(0xf9, 0x80, 0x00), EQUAL_FLOAT);
@@ -372,7 +328,6 @@ static void test_major_type_7(void)
         CBOR_CHECK(float, float_half, stream, 1.5f, HEX_LITERAL(0xf9, 0x3e, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float_half, stream, 5.960464477539063e-8, HEX_LITERAL(0xf9, 0x00, 0x01), EQUAL_FLOAT);
     }
-
     {
         // check border conditions
         CBOR_CHECK(float, float, stream, .0f, HEX_LITERAL(0xfa, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
@@ -384,7 +339,6 @@ static void test_major_type_7(void)
         CBOR_CHECK(float, float, stream, 100000.f, HEX_LITERAL(0xfa, 0x47, 0xc3, 0x50, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, 3.4028234663852886e+38, HEX_LITERAL(0xfa, 0x7f, 0x7f, 0xff, 0xff), EQUAL_FLOAT);
     }
-
     {
         // check border conditions
         CBOR_CHECK(double, double, stream, .0f, HEX_LITERAL(0xfb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
@@ -403,50 +357,33 @@ static void test_major_type_7_invalid(void)
 {
     {
         // check writing to stream that is not large enough
-
         cbor_stream_t stream;
         cbor_init(&stream, 0);
 
-        {
-            const size_t written_bytes = cbor_serialize_bool(&stream, true);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
-        {
-            const size_t written_bytes = cbor_serialize_float_half(&stream, 0.f);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
-        {
-            const size_t written_bytes = cbor_serialize_float(&stream, 0.f);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
-        {
-            const size_t written_bytes = cbor_serialize_double(&stream, 0);
-            TEST_ASSERT_EQUAL_INT(0, written_bytes);
-            TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        }
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_bool(&stream, true));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_float_half(&stream, 0.f));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_float(&stream, 0.f));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_double(&stream, 0));
+        TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
         cbor_destroy(&stream);
     }
-
     {
         // check reading from stream that contains other type of data
-
         unsigned char data[] = {0x40}; // empty string encoded in CBOR
         cbor_stream_t stream = {data, 1, 1};
 
-        {
-            float val = 0;
-            const size_t read_bytes = cbor_deserialize_float(&stream, 0, &val);
-            TEST_ASSERT_EQUAL_INT(0, read_bytes);
-        }
-        {
-            double val = 0;
-            const size_t read_bytes = cbor_deserialize_double(&stream, 0, &val);
-            TEST_ASSERT_EQUAL_INT(0, read_bytes);
-        }
+        bool val_bool = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_bool(&stream, 0, &val_bool));
+        float val_float = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_float(&stream, 0, &val_float));
+        float val_float_half = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_float_half(&stream, 0, &val_float_half));
+        double val_double = 0;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_double(&stream, 0, &val_double));
     }
 }
 
@@ -484,8 +421,6 @@ static void manual_test(void)
     cbor_deserialize_byte_string(&stream, (size_t)0, res, sizeof(res));
     printf("\ndeserialized string: %s\n", res);
     cbor_destroy(&stream);
-
-
 }
 
 void tests_cbor(void)
