@@ -134,8 +134,25 @@ size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length);
 size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_map(cbor_stream_t* s);
 
+/**
+ * Write a break symbol at the current offset in stream @p s
+ *
+ * Used for marking the end of indefinite length CBOR items
+ */
 size_t cbor_write_break(cbor_stream_t* s);
+/**
+ * Whether we are at a break symbol in stream @p s at offset @p offset
+ *
+ * @return True in case the there is a break symbol at the current offset
+ */
 bool cbor_at_break(const cbor_stream_t* s, size_t offset);
+/**
+ * Whether we are at the end of the stream @p s at offset @p offset
+ *
+ * Useful for abort conditions in loops while deserializing CBOR items
+ *
+ * @return True in case @p offset marks the end of the stream
+ */
 bool cbor_at_end(const cbor_stream_t* s, size_t offset);
 
 #endif
