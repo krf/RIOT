@@ -356,52 +356,35 @@ static void test_major_type_4_invalid(void)
 
 static void test_major_type_5(void)
 {
-    cbor_clear(&stream);
-
-    // serialization
-    char a[10] = "abc";
-    char b[10] = "def";
-    TEST_ASSERT(cbor_serialize_map(&stream, 2));
-    TEST_ASSERT(cbor_serialize_int(&stream, 1));
-    TEST_ASSERT(cbor_serialize_byte_string(&stream, a));
-    TEST_ASSERT(cbor_serialize_int(&stream, 2));
-    TEST_ASSERT(cbor_serialize_byte_string(&stream, b));
-    unsigned char data[] = {0xA2, 0x01, 0x43, 0x61, 0x62, 0x63, 0x02, 0x43, 0x64, 0x65, 0x66};
-    CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
-
-    // deserialization
-    size_t map_length;
-    size_t offset = cbor_deserialize_map(&stream, 0, &map_length);
-    TEST_ASSERT_EQUAL_INT(2, map_length);
-    int i;
-    offset += cbor_deserialize_int(&stream, offset, &i);
-    TEST_ASSERT_EQUAL_INT(1, i);
-    offset += cbor_deserialize_byte_string(&stream, offset, a, (size_t)10);
-    TEST_ASSERT_EQUAL_STRING("abc", a);
-    offset += cbor_deserialize_int(&stream, offset, &i);
-    TEST_ASSERT_EQUAL_INT(2, i);
-    offset += cbor_deserialize_byte_string(&stream, offset, b, (size_t)10);
-    TEST_ASSERT_EQUAL_STRING("def", b);
-}
-
-static void test_major_type_5_invalid(void)
-{
     {
-        // check writing to stream that is not large enough
-        cbor_stream_t stream;
-        cbor_init(&stream, 0, 0);
+        cbor_clear(&stream);
 
-        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_map(&stream, 1));
+        // serialization
+        TEST_ASSERT(cbor_serialize_map(&stream, 2));
+        TEST_ASSERT(cbor_serialize_int(&stream, 1));
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, "1"));
+        TEST_ASSERT(cbor_serialize_int(&stream, 2));
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, "2"));
+        unsigned char data[] = {0xa2,
+            0x01, 0x41, 0x31, // kv-pair 1
+            0x02, 0x41, 0x32, // kv-pair 2
+        };
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
-        cbor_destroy(&stream);
-    }
-    {
-        // check reading from stream that contains other type of data
-        unsigned char data[] = {0x40}; // empty string encoded in CBOR
-        cbor_stream_t stream = {data, 1, 1};
-
+        // deserialization
         size_t map_length;
-        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_map(&stream, 0, &map_length));
+        size_t offset = cbor_deserialize_map(&stream, 0, &map_length);
+        TEST_ASSERT_EQUAL_INT(2, map_length);
+        int key;
+        char value[8];
+        offset += cbor_deserialize_int(&stream, offset, &key);
+        TEST_ASSERT_EQUAL_INT(1, key);
+        offset += cbor_deserialize_byte_string(&stream, offset, value, sizeof(value));
+        TEST_ASSERT_EQUAL_STRING("1", value);
+        offset += cbor_deserialize_int(&stream, offset, &key);
+        TEST_ASSERT_EQUAL_INT(2, key);
+        offset += cbor_deserialize_byte_string(&stream, offset, value, sizeof(value));
+        TEST_ASSERT_EQUAL_STRING("2", value);
     }
     {
         // indefinite maps
@@ -435,6 +418,27 @@ static void test_major_type_5_invalid(void)
         }
         TEST_ASSERT_EQUAL_INT(2, count);
         TEST_ASSERT(cbor_at_end(&stream, offset));
+    }
+}
+
+static void test_major_type_5_invalid(void)
+{
+    {
+        // check writing to stream that is not large enough
+        cbor_stream_t stream;
+        cbor_init(&stream, 0, 0);
+
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_map(&stream, 1));
+
+        cbor_destroy(&stream);
+    }
+    {
+        // check reading from stream that contains other type of data
+        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        cbor_stream_t stream = {data, 1, 1};
+
+        size_t map_length;
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_map(&stream, 0, &map_length));
     }
 }
 
