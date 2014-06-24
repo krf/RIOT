@@ -561,6 +561,40 @@ size_t cbor_serialize_array(cbor_stream_t* s, uint64_t array_length)
     return encode_int(CBOR_ARRAY, s, array_length);
 }
 
+size_t cbor_serialize_indefinite_array(cbor_stream_t* s)
+{
+    CBOR_ENSURE_SIZE(s, 1);
+    s->data[s->pos++] = CBOR_ARRAY | CBOR_VAR_FOLLOWS;
+    return 1;
+
+}
+
+size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset)
+{
+    if (s->data[offset] != (CBOR_ARRAY | CBOR_VAR_FOLLOWS)) {
+        return 0;
+    }
+    return 1;
+}
+
+size_t cbor_write_break(cbor_stream_t* s)
+{
+    CBOR_ENSURE_SIZE(s, 1);
+    s->data[s->pos++] = CBOR_BREAK;
+    return 1;
+}
+
+bool cbor_at_break(const cbor_stream_t* s, size_t offset)
+{
+    return cbor_at_end(s, offset) || s->data[offset] == CBOR_BREAK;
+}
+
+bool cbor_at_end(const cbor_stream_t* s, size_t offset)
+{
+    // cbor_stream_t::pos points at the next *free* byte, hence the -1
+    return s ? offset >= s->pos-1 : true;
+}
+
 // BEGIN: Printers
 void cbor_stream_print(cbor_stream_t* stream)
 {

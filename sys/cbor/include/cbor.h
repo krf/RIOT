@@ -110,6 +110,12 @@ size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
 size_t cbor_serialize_array(cbor_stream_t* s, uint64_t array_length);
 size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, uint64_t* array_length);
+size_t cbor_serialize_indefinite_array(cbor_stream_t* s);
+size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset);
+
+size_t cbor_write_break(cbor_stream_t* s);
+bool cbor_at_break(const cbor_stream_t* s, size_t offset);
+bool cbor_at_end(const cbor_stream_t* s, size_t offset);
 
 #endif
 

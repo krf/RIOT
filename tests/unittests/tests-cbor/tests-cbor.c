@@ -296,6 +296,7 @@ static void test_major_type_4(void)
         // deserialization
         uint64_t array_length;
         size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
+        TEST_ASSERT(offset);
         TEST_ASSERT_EQUAL_INT(2, array_length);
         int i;
         offset += cbor_deserialize_int(&stream, offset, &i);
@@ -303,6 +304,31 @@ static void test_major_type_4(void)
         char buffer[1024];
         offset += cbor_deserialize_byte_string(&stream, offset, buffer, sizeof(buffer));
         TEST_ASSERT_EQUAL_STRING("a", buffer);
+    }
+    // indefinite array
+    {
+        cbor_clear(&stream);
+
+        // serialization
+        TEST_ASSERT(cbor_serialize_indefinite_array(&stream));
+        TEST_ASSERT(cbor_serialize_int(&stream, 1));
+        TEST_ASSERT(cbor_serialize_int(&stream, 2));
+        TEST_ASSERT(cbor_write_break(&stream));
+        unsigned char data[] = {0x9f, 0x01, 0x02, 0xff};
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+
+        // deserialization
+        size_t offset = cbor_deserialize_indefinite_array(&stream, 0);
+        int count = 0;
+        while (!cbor_at_break(&stream, offset)) {
+            int val;
+            size_t read_bytes = cbor_deserialize_int(&stream, offset, &val);
+            TEST_ASSERT(read_bytes);
+            offset += read_bytes;
+            ++count;
+        }
+        TEST_ASSERT_EQUAL_INT(2, count);
+        TEST_ASSERT(cbor_at_end(&stream, offset));
     }
 }
 
