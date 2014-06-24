@@ -104,7 +104,7 @@ static void test_major_type_0_invalid(void)
         // basically tests internal 'encode_int' function
 
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         // check each possible branch in 'encode_int'
         // (value in first byte, uint8 follows, uint16 follows, uint64 follows)
@@ -167,7 +167,7 @@ static void test_major_type_1_invalid(void)
         // check writing to stream that is not large enough (also see test_major_type_0_invalid)
 
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int64_t(&stream, 0));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
@@ -215,7 +215,7 @@ static void test_major_type_2_invalid(void)
     {
         // check writing to stream that is not large enough
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_byte_string(&stream, "foo"));
 
@@ -253,7 +253,7 @@ static void test_major_type_3_invalid(void)
     {
         // check writing to stream that is not large enough
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_unicode_string(&stream, "foo"));
 
@@ -338,7 +338,7 @@ static void test_major_type_4_invalid(void)
     {
         // check writing to stream that is not large enough
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_array(&stream, 1));
 
@@ -389,7 +389,7 @@ static void test_major_type_5_invalid(void)
     {
         // check writing to stream that is not large enough
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_map(&stream, 1));
 
@@ -490,7 +490,7 @@ static void test_major_type_7_invalid(void)
     {
         // check writing to stream that is not large enough
         cbor_stream_t stream;
-        cbor_init(&stream, 0);
+        cbor_init(&stream, 0, 0);
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_bool(&stream, true));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);

@@ -60,9 +60,12 @@ typedef struct cbor_stream_t
 /**
  * Initialize cbor struct
  *
- * @param size The size in bytes that should be allocated for this struct
+ * @note Does *not* take ownership of @p buffer
+ *
+ * @param buffer The buffer used for storing CBOR-encoded data
+ * @param size The size of buffer @p buffer
  */
-void cbor_init(cbor_stream_t* stream, size_t size);
+void cbor_init(cbor_stream_t* stream, unsigned char* buffer, size_t size);
 
 /**
  * Clear cbor struct
@@ -72,9 +75,9 @@ void cbor_init(cbor_stream_t* stream, size_t size);
 void cbor_clear(cbor_stream_t* stream);
 
 /**
- * Free memory hold by the cbor struct
+ * Destroy the cbor struct
  *
- * Frees memory hold by stream->data and resets the struct
+ * @note Does *not* free data
  */
 void cbor_destroy(cbor_stream_t* stream);
 

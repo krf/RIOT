@@ -209,12 +209,12 @@ void dump_memory(unsigned char* data, size_t size)
     }
 }
 
-void cbor_init(cbor_stream_t* stream, size_t size)
+void cbor_init(cbor_stream_t* stream, unsigned char* buffer, size_t size)
 {
     if (!stream)
         return;
 
-    stream->data = calloc(size, sizeof(stream));
+    stream->data = buffer;
     stream->size = size;
     stream->pos = 0;
 }
@@ -232,7 +232,6 @@ void cbor_destroy(cbor_stream_t* stream)
     if (!stream)
         return;
 
-    free(stream->data);
     stream->data = 0;
     stream->size = 0;
     stream->pos = 0;
