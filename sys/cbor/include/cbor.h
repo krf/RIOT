@@ -103,8 +103,22 @@ size_t cbor_serialize_float(cbor_stream_t* s, float val);
 size_t cbor_deserialize_double(const cbor_stream_t* stream, size_t offset, double* val);
 size_t cbor_serialize_double(cbor_stream_t* s, double val);
 
+/**
+ * Deserialize bytes from @p stream to @p val
+ *
+ * @param val Pointer to destination array
+ * @param length Length of destination array
+ * @return Number of bytes written into @p val
+ */
 size_t cbor_deserialize_byte_string(const cbor_stream_t* stream, size_t offset, char* val, size_t length);
 size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
+/**
+ * Deserialize unicode string from @p stream to @p val
+ *
+ * @param val Pointer to destination array
+ * @param length Length of destination array
+ * @return Number of bytes written into @p val
+ */
 size_t cbor_deserialize_unicode_string(const cbor_stream_t* stream, size_t offset, char* val, size_t length);
 size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
