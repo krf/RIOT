@@ -274,7 +274,7 @@ static void test_major_type_4(void)
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
         // deserialization
-        uint64_t array_length;
+        size_t array_length;
         size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
         TEST_ASSERT_EQUAL_INT(2, array_length);
         int i;
@@ -294,7 +294,7 @@ static void test_major_type_4(void)
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
         // deserialization
-        uint64_t array_length;
+        size_t array_length;
         size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
         TEST_ASSERT(offset);
         TEST_ASSERT_EQUAL_INT(2, array_length);
@@ -348,7 +348,7 @@ static void test_major_type_4_invalid(void)
         unsigned char data[] = {0x40}; // empty string encoded in CBOR
         cbor_stream_t stream = {data, 1, 1};
 
-        uint64_t array_length;
+        size_t array_length;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_array(&stream, 0, &array_length));
     }
 }

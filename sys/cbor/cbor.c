@@ -544,18 +544,20 @@ size_t cbor_serialize_unicode_string(cbor_stream_t* stream, const char* val)
     return encode_bytes(CBOR_TEXT, stream, val, strlen(val));
 }
 
-size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, uint64_t* array_length)
+size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, size_t* array_length)
 {
     assert(array_length);
     if (CBOR_TYPE(s, offset) != CBOR_ARRAY) {
         return 0;
     }
 
-    size_t read_bytes = decode_int(s, offset, array_length);
+    uint64_t val;
+    size_t read_bytes = decode_int(s, offset, &val);
+    *array_length = (size_t)val;
     return read_bytes;
 }
 
-size_t cbor_serialize_array(cbor_stream_t* s, uint64_t array_length)
+size_t cbor_serialize_array(cbor_stream_t* s, size_t array_length)
 {
     // serialize number of array items
     return encode_int(CBOR_ARRAY, s, array_length);
