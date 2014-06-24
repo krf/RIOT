@@ -403,6 +403,39 @@ static void test_major_type_5_invalid(void)
         uint64_t map_length;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_map(&stream, 0, &map_length));
     }
+    {
+        // indefinite maps
+        cbor_clear(&stream);
+
+        // serialization
+        TEST_ASSERT(cbor_serialize_indefinite_map(&stream));
+        TEST_ASSERT(cbor_serialize_int(&stream, 1));
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, "1"));
+        TEST_ASSERT(cbor_serialize_int(&stream, 2));
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, "2"));
+        TEST_ASSERT(cbor_write_break(&stream));
+        unsigned char data[] = {0xbf,
+            0x01, 0x41, 0x31, // kv-pair 1
+            0x02, 0x41, 0x32, // kv-pair 2
+            0xff};
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+
+        // deserialization
+        size_t offset = cbor_deserialize_indefinite_map(&stream, 0);
+        int count = 0;
+        while (!cbor_at_break(&stream, offset)) {
+            int key;
+            char value[16];
+            size_t read_bytes;
+            offset += read_bytes = cbor_deserialize_int(&stream, offset, &key);
+            TEST_ASSERT(read_bytes);
+            offset += read_bytes = cbor_deserialize_byte_string(&stream, offset, value, sizeof(value));
+            TEST_ASSERT(read_bytes);
+            ++count;
+        }
+        TEST_ASSERT_EQUAL_INT(2, count);
+        TEST_ASSERT(cbor_at_end(&stream, offset));
+    }
 }
 
 static void test_major_type_7(void)

@@ -579,6 +579,21 @@ size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset)
     return 1;
 }
 
+size_t cbor_serialize_indefinite_map(cbor_stream_t* s)
+{
+    CBOR_ENSURE_SIZE(s, 1);
+    s->data[s->pos++] = CBOR_MAP | CBOR_VAR_FOLLOWS;
+    return 1;
+}
+
+size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset)
+{
+    if (s->data[offset] != (CBOR_MAP | CBOR_VAR_FOLLOWS)) {
+        return 0;
+    }
+    return 1;
+}
+
 size_t cbor_write_break(cbor_stream_t* s)
 {
     CBOR_ENSURE_SIZE(s, 1);
@@ -598,18 +613,20 @@ bool cbor_at_end(const cbor_stream_t* s, size_t offset)
 }
 
 
-size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, uint64_t* map_length)
+size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_length)
 {
     assert(map_length);
     if (CBOR_TYPE(s, offset) != CBOR_MAP) {
         return 0;
     }
 
-    size_t read_bytes = decode_int(s, offset, map_length);
+    uint64_t val;
+    size_t read_bytes = decode_int(s, offset, &val);
+    *map_length = (size_t)val;
     return read_bytes;
 }
 
-size_t cbor_serialize_map(cbor_stream_t* s, uint64_t map_length)
+size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length)
 {
     // serialize number of item key-value pairs
     return encode_int(CBOR_MAP, s, map_length);

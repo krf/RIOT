@@ -128,8 +128,11 @@ size_t cbor_serialize_array(cbor_stream_t* s, size_t array_length);
 size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_array(cbor_stream_t* s);
 
-size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, uint64_t* map_length);
-size_t cbor_serialize_map(cbor_stream_t* s, uint64_t map_length);
+size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_length);
+size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length);
+
+size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
+size_t cbor_serialize_indefinite_map(cbor_stream_t* s);
 
 size_t cbor_write_break(cbor_stream_t* s);
 bool cbor_at_break(const cbor_stream_t* s, size_t offset);
