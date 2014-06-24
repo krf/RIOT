@@ -524,6 +524,48 @@ static void test_major_type_7_invalid(void)
 }
 
 /**
+ * Manual test for testing the cbor_stream_decode function
+ */
+void test_stream_decode(void)
+{
+    cbor_clear(&stream);
+
+    cbor_serialize_int(&stream, 1);
+    cbor_serialize_uint64_t(&stream, 2llu);
+    cbor_serialize_int64_t(&stream, 3);
+    cbor_serialize_bool(&stream, true);
+    cbor_serialize_float_half(&stream, 1.1f);
+    cbor_serialize_float(&stream, 1.5f);
+    cbor_serialize_double(&stream, 2.0);
+    cbor_serialize_byte_string(&stream, "abc");
+    cbor_serialize_unicode_string(&stream, "def");
+
+    cbor_serialize_array(&stream, 2);
+    cbor_serialize_int(&stream, 0);
+    cbor_serialize_int(&stream, 1);
+
+    cbor_serialize_indefinite_array(&stream);
+    cbor_serialize_int(&stream, 10);
+    cbor_serialize_int(&stream, 11);
+    cbor_write_break(&stream);
+
+    cbor_serialize_map(&stream, 2);
+    cbor_serialize_int(&stream, 1);
+    cbor_serialize_byte_string(&stream, "1");
+    cbor_serialize_int(&stream, 2);
+    cbor_serialize_byte_string(&stream, "2");
+
+    cbor_serialize_indefinite_map(&stream);
+    cbor_serialize_int(&stream, 10);
+    cbor_serialize_byte_string(&stream, "10");
+    cbor_serialize_int(&stream, 11);
+    cbor_serialize_byte_string(&stream, "11");
+    cbor_write_break(&stream);
+
+    cbor_stream_decode(&stream);
+}
+
+/**
  * See examples from CBOR RFC (cf. Appendix A. Examples)
  */
 TestRef tests_cbor_all(void)
@@ -557,6 +599,7 @@ void tests_cbor(void)
 {
     (void)manual_test; // fix unused warning
     //manual_test();
+    test_stream_decode();
 
     TESTS_RUN(tests_cbor_all());
 }

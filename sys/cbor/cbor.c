@@ -643,48 +643,96 @@ void cbor_stream_print(cbor_stream_t* stream)
  *
  * @return Amount of bytes consumed
  */
-size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset)
+size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
 {
-#define DESERIALIZE_AND_PRINT(Type, format_string) { \
-        Type val; \
-        size_t read_bytes = cbor_deserialize_##Type(stream, offset, &val); \
-        printf("[type: "#Type", val: "format_string"]\n", val); \
+#define DESERIALIZE_AND_PRINT(type, suffix, format_string) { \
+        type val; \
+        size_t read_bytes = cbor_deserialize_##suffix(stream, offset, &val); \
+        printf("("#type", "format_string")\n", val); \
         return read_bytes; \
     }
 
-    printf("  Debug: Major type: %X\n", CBOR_TYPE(stream, offset) >> 5);
+    printf("%*s", indent, "");
     switch (CBOR_TYPE(stream, offset)) {
     case CBOR_UINT:
-        DESERIALIZE_AND_PRINT(int, "%d")
+        DESERIALIZE_AND_PRINT(int, int, "%d")
     case CBOR_BYTES: {
         char buffer[CBOR_STREAM_PRINT_BUFFERSIZE];
         size_t read_bytes = cbor_deserialize_byte_string(stream, offset, buffer, sizeof(buffer));
-        printf("[type: byte string, val: \"%s\"]\n", buffer); \
+        printf("(byte string, \"%s\")\n", buffer); \
+        return read_bytes;
+    }
+    case CBOR_TEXT: {
+        char buffer[CBOR_STREAM_PRINT_BUFFERSIZE];
+        size_t read_bytes = cbor_deserialize_unicode_string(stream, offset, buffer, sizeof(buffer));
+        printf("(unicode string, \"%s\")\n", buffer); \
         return read_bytes;
     }
     case CBOR_ARRAY: {
-        uint64_t size;
-        size_t read_bytes = decode_int(stream, offset, &size);
+        const bool is_indefinite = (stream->data[offset] == (CBOR_ARRAY | CBOR_VAR_FOLLOWS));
+        uint64_t array_length;
+        size_t read_bytes;
 
-        printf("[type: CBOR array, length: %"PRIu64"]\n", size);
-
-        // read array items
-        for (uint64_t i = 0; i < size; ++i) {
-            size_t inner_read_bytes = cbor_stream_decode_at(stream, read_bytes);
+        if (is_indefinite) {
+            offset += read_bytes = cbor_deserialize_indefinite_array(stream, offset);
+            printf("(array, length: [indefinite])\n");
+        } else {
+            offset += read_bytes = decode_int(stream, offset, &array_length);
+            printf("(array, length: %d)\n", array_length);
+        }
+        size_t i = 0;
+        while (is_indefinite ? !cbor_at_break(stream, offset) : i < array_length) {
+            size_t inner_read_bytes;
+            offset += inner_read_bytes = cbor_stream_decode_at(stream, offset, indent+2);
             if (inner_read_bytes == 0) {
-                fprintf(stderr, "Failed to read array item at position %"PRIu64, i);
+                fprintf(stderr, "Failed to read array item at position %d", i);
                 break;
             }
-
             read_bytes += inner_read_bytes;
+            ++i;
         }
+        read_bytes += cbor_at_break(stream, offset);
         return read_bytes;
     }
+    case CBOR_MAP: {
+        const bool is_indefinite = (stream->data[offset] == (CBOR_MAP | CBOR_VAR_FOLLOWS));
+        uint64_t map_length;
+        size_t read_bytes;
+
+        if (is_indefinite) {
+            offset += read_bytes = cbor_deserialize_indefinite_map(stream, offset);
+            printf("(map, length: [indefinite])\n");
+        } else {
+            offset += read_bytes = decode_int(stream, offset, &map_length);
+            printf("(map, length: %d)\n", map_length);
+        }
+        size_t i = 0;
+        while (is_indefinite ? !cbor_at_break(stream, offset) : i < map_length) {
+            size_t key_read_bytes, value_read_bytes;
+            offset += key_read_bytes = cbor_stream_decode_at(stream, offset, indent+1); // key
+            offset += value_read_bytes = cbor_stream_decode_at(stream, offset, indent+2); // value
+            if (key_read_bytes == 0 || value_read_bytes == 0) {
+                fprintf(stderr, "Failed to read key-value pair at position %d", i);
+                break;
+            }
+            read_bytes += key_read_bytes + value_read_bytes;
+            ++i;
+        }
+        read_bytes += cbor_at_break(stream, offset);
+        return read_bytes;
+    }
+
     case CBOR_7: {
         switch (stream->data[offset]) {
         case CBOR_FALSE:
         case CBOR_TRUE:
-            DESERIALIZE_AND_PRINT(bool, "%d")
+            DESERIALIZE_AND_PRINT(bool, bool, "%d")
+        case CBOR_FLOAT16:
+            DESERIALIZE_AND_PRINT(float, float_half, "%f")
+        case CBOR_FLOAT32:
+            DESERIALIZE_AND_PRINT(float, float, "%f")
+        case CBOR_FLOAT64:
+            DESERIALIZE_AND_PRINT(double, double, "%f")
         default:
             break;
         }
@@ -700,9 +748,10 @@ void cbor_stream_decode(cbor_stream_t* stream)
     printf("Data:\n");
     size_t offset = 0;
     while (offset < stream->pos) {
-        size_t read_bytes = cbor_stream_decode_at(stream, offset);
+        size_t read_bytes = cbor_stream_decode_at(stream, offset, 0);
         if (read_bytes == 0) {
-            fprintf(stderr, "Failed to read from stream at offset %d\n", offset);
+            fprintf(stderr, "Failed to read from stream at offset %d, start byte 0x%02X\n", offset, stream->data[offset]);
+            cbor_stream_print(stream);
             return;
         }
         offset += read_bytes;
