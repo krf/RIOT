@@ -370,7 +370,7 @@ static void test_major_type_5(void)
     CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
     // deserialization
-    uint64_t map_length;
+    size_t map_length;
     size_t offset = cbor_deserialize_map(&stream, 0, &map_length);
     TEST_ASSERT_EQUAL_INT(2, map_length);
     int i;
@@ -400,7 +400,7 @@ static void test_major_type_5_invalid(void)
         unsigned char data[] = {0x40}; // empty string encoded in CBOR
         cbor_stream_t stream = {data, 1, 1};
 
-        uint64_t map_length;
+        size_t map_length;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_map(&stream, 0, &map_length));
     }
     {
