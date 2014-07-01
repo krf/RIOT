@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define CBOR_TYPE_MASK          0xE0    // top 3 bits
 #define CBOR_INFO_MASK          0x1F    // low 5 bits
@@ -50,6 +51,10 @@
 
 // Indefinite Lengths for Some Major types (cf. section 2.2)
 #define CBOR_VAR_FOLLOWS        31      // 0x1f
+
+// Major type 6: Semantic tagging
+#define CBOR_DATETIME_STRING_FOLLOWS        0
+#define CBOR_DATETIME_EPOCH_FOLLOWS         1
 
 // Major type 7: Float and other types
 #define CBOR_FALSE      (CBOR_7 | 20)
@@ -643,6 +648,70 @@ size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length)
     return encode_int(CBOR_MAP, s, map_length);
 }
 
+size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, struct tm* val)
+{
+    if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS))
+        return 0;
+    char buffer[21];
+    offset++;  // skip tag byte to decode date_time
+    size_t read_bytes = cbor_deserialize_unicode_string(stream, offset, buffer, sizeof(buffer));
+    const char* format = "%Y-%m-%dT%H:%M:%SZ";
+    if ( (strptime(buffer, format, val)) == 0)
+        return 0;
+    if ((mktime(val)) == -1)
+        return 0;
+    return read_bytes + 1;  // + 1 tag byte
+}
+
+size_t cbor_serialize_date_time(const cbor_stream_t* stream, struct tm* val)
+{
+    int timeStrLen = 21;
+    CBOR_ENSURE_SIZE(stream, timeStrLen);
+    char* timeStr[timeStrLen];
+    const char* format = "%Y-%m-%dT%H:%M:%SZ";
+    if (strftime(timeStr, (size_t) timeStrLen, format, val) == 0)  // struct tm to string
+        return 0;
+    uint tag = 0;  // 0 for standard date/time string;
+    cbor_write_tag(stream, tag);
+    size_t len2 = cbor_serialize_unicode_string(stream, timeStr);
+    return len2 + 1;  // utf8 time string length + tag length
+}
+
+size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val)
+{
+    if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_EPOCH_FOLLOWS)) {
+        return 0;
+    }
+
+    offset++; // skip tag byte
+    uint64_t epoch;
+    size_t read_bytes = cbor_deserialize_uint64_t(stream, offset, &epoch);
+    if (!read_bytes) {
+        return 0;
+    }
+
+    *val = (time_t)epoch;
+    return read_bytes + 1; // + 1 tag byte
+}
+
+size_t cbor_serialize_date_time_epoch(const cbor_stream_t* stream, time_t* val)
+{
+    // we need at least 2 bytes (tag byte + at least 1 byte for the integer)
+    CBOR_ENSURE_SIZE(stream, 2);
+
+    if (val < 0) {
+        return 0; // we currently don't support negative values for the time_t object
+    }
+
+    if (!cbor_write_tag(stream, CBOR_DATETIME_EPOCH_FOLLOWS)) {
+        return 0;
+    }
+
+    uint64_t time = (uint64_t)val;
+    size_t written_bytes = encode_int(CBOR_UINT, stream, time);
+    return written_bytes + 1; // + 1 tag byte
+}
+
 // BEGIN: Printers
 void cbor_stream_print(cbor_stream_t* stream)
 {
@@ -735,8 +804,26 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
     }
     case CBOR_TAG: {
         uint tag = CBOR_ADDITIONAL_INFO(stream, offset);
-        printf("(tag: %u)\n", tag);
-        return 1;
+        printf("(tag: %u, ", tag);
+        switch (tag) {
+        case CBOR_DATETIME_STRING_FOLLOWS: {
+            char buf[64];
+            struct tm timeinfo;
+            size_t read_bytes = cbor_deserialize_date_time(stream, offset, &timeinfo);
+            strftime(buf, sizeof(buf), "%c", &timeinfo);
+            printf("date/time string: \"%s\")\n", buf);
+            return read_bytes;
+        }
+        case CBOR_DATETIME_EPOCH_FOLLOWS: {
+            time_t time;
+            size_t read_bytes = cbor_deserialize_date_time_epoch(stream, offset, &time);
+            printf("date/time epoch: %d)\n", time);
+            return read_bytes;
+        }
+        default:
+            printf("unknown content)\n");
+            return 1;
+        }
     }
     case CBOR_7: {
         switch (stream->data[offset]) {

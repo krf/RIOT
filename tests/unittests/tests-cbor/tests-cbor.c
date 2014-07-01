@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <time.h>
 
 #define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
     if (memcmp(stream.data, expected_value, expected_value_size) != 0) { \
@@ -59,6 +60,16 @@
     (fabs(a - b) < 0.00001))
 #define EQUAL_STRING(a, b) \
     (strcmp(a, b) == 0)
+#define EQUAL_DATE_TIME(a, b) ( \
+    (a.tm_isdst == b.tm_isdst) && \
+    (a.tm_yday == b.tm_yday) && \
+    (a.tm_wday == b.tm_wday) && \
+    (a.tm_year == b.tm_year) && \
+    (a.tm_mon == b.tm_mon) && \
+    (a.tm_mday == b.tm_mday) && \
+    (a.tm_hour == b.tm_hour) && \
+    (a.tm_min == b.tm_min) && \
+    (a.tm_sec == b.tm_sec))
 // END: Comparator functions
 
 unsigned char data[1024];
@@ -446,7 +457,6 @@ static void test_major_type_5_invalid(void)
 static void test_major_type_6(void)
 {
     char buffer[128];
-
     {
         cbor_clear(&stream);
 
@@ -462,6 +472,42 @@ static void test_major_type_6(void)
         TEST_ASSERT(cbor_at_tag(&stream, 0));
         TEST_ASSERT(cbor_deserialize_byte_string(&stream, 1, buffer, sizeof(buffer)));
         CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
+    }
+    {
+        cbor_clear(&stream);
+
+        // CBOR: UTF-8 string marked with a tag 0 to indicate it is a standard date/time string
+        // byte 1: (major type 6, additional information
+        // byte 2: (major type 2, additional 23 for the length)
+        // bytes 3 to 23: bytes representing the date/time UTF-8 string
+        unsigned char data[] = {0xC0, 0x74, 0x32, 0x30, 0x31, 0x34, 0x2D, 0x30, 0x37, 0x2D, 0x30, 0x31, 0x54, 0x31, 0x35, 0x3A, 0x30, 0x30, 0x3A, 0x30, 0x30, 0x5A};
+        struct tm val;
+        val.tm_year = 114;
+        val.tm_mon = 6;
+        val.tm_mday = 1;
+        val.tm_hour = 15;
+        val.tm_min = 0;
+        val.tm_sec = 0;
+        mktime(&val);
+        TEST_ASSERT(cbor_serialize_date_time(&stream, &val));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+
+        TEST_ASSERT(cbor_at_tag(&stream, 0));
+        struct tm val2;
+        TEST_ASSERT(cbor_deserialize_date_time(&stream, 0, &val2));
+        CBOR_CHECK_DESERIALIZED(val, val2, EQUAL_DATE_TIME);
+    }
+    {
+        cbor_clear(&stream);
+
+        // CBOR: unsigned integer marked with a tag 1 to indicate it is a standard date/time epoch (similar to time_t)
+        unsigned char data[] = {0xC1, 0x01};
+        time_t val = 1;
+        TEST_ASSERT(cbor_serialize_date_time_epoch(&stream, val));
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+        time_t val2 = 0;
+        TEST_ASSERT(cbor_deserialize_date_time_epoch(&stream, 0, &val2));
+        CBOR_CHECK_DESERIALIZED(val, val2, EQUAL_INT);
     }
 }
 
@@ -584,6 +630,12 @@ void test_stream_decode(void)
     cbor_serialize_int(&stream, 11);
     cbor_serialize_byte_string(&stream, "11");
     cbor_write_break(&stream);
+
+    time_t rawtime;
+    time(&rawtime);
+    struct tm* timeinfo = localtime(&rawtime);
+    cbor_serialize_date_time(&stream, timeinfo);
+    cbor_serialize_date_time_epoch(&stream, rawtime);
 
     cbor_write_tag(&stream, 2);
     cbor_serialize_byte_string(&stream, "1");

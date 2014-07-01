@@ -48,6 +48,8 @@
  *
  * - Major type 6 (optional semantic tagging of other major types): Basic support (see below). Relevant functions:
  *   - cbor_write_tag()
+ *   - cbor_deserialize_date_time()
+ *   - cbor_serialize_date_time()
  *
  * - Major type 7 (floating-point numbers and values with no content): Basic support (see below). Relevant functions:
  *   - cbor_serialize_float_half(), cbor_deserialize_float_half()
@@ -61,6 +63,11 @@
  * has to transform that into a meaningful representation
  *
  * @par Notes about major type 6 (cf. https://tools.ietf.org/html/rfc7049#section-2.4):
+ * Encoding date and time: date/time strings that follow the standard format described in Section 3.3 of [RFC3339]:
+ *   2003-12-13T18:30:02Z          - supported
+ *   2003-12-13T18:30:02.25Z       - not supported
+ *   2003-12-13T18:30:02+01:00     - not supported
+ *   2003-12-13T18:30:02.25+01:00  - not supported
  * Since we do not have C types for representing bignums/bigfloats/decimal-fraction
  * we do not provide API to serialize/deserialize them at all.
  * You can still read out the actual data item behind the tag (via cbor_deserialize_byte_string())
@@ -88,6 +95,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+struct tm;
 
 /**
  * @brief Struct containing CBOR-encoded data
@@ -293,6 +302,42 @@ bool cbor_at_break(const cbor_stream_t* s, size_t offset);
  * @return True in case @p offset marks the end of the stream
  */
 bool cbor_at_end(const cbor_stream_t* s, size_t offset);
+
+/**
+ * Deserialize date and time
+ *
+ * Basic usage:
+ * @code
+ * struct tm val;
+ * cbor_deserialize_date_time(&stream, 0, &val);
+ * @endcode
+ *
+ * @param val  tm struct where the decoded date/time will be stored
+ */
+size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, struct tm* val);
+
+/**
+ * Serialize date and time
+ *
+ * Basic usage:
+ * @code
+ * struct tm val;
+ * val.tm_year = 114;
+ * val.tm_mon = 6;
+ * val.tm_mday = 1;
+ * val.tm_hour = 15;
+ * val.tm_min = 0;
+ * val.tm_sec = 0;
+ * mktime(&val);
+ * cbor_serialize_date_time(&stream, &val);
+ * @endcode
+ *
+ * @param val  tm struct containing the date/time info to be encoded
+ */
+size_t cbor_serialize_date_time(const cbor_stream_t* stream, struct tm* val);
+
+size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val);
+size_t cbor_serialize_date_time_epoch(const cbor_stream_t* stream, time_t* val);
 
 #endif
 
