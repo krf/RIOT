@@ -153,21 +153,22 @@ void cbor_stream_print(cbor_stream_t* stream);
  */
 void cbor_stream_decode(cbor_stream_t* stream);
 
-size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val);
 size_t cbor_serialize_int(cbor_stream_t* s, int val);
-size_t cbor_deserialize_uint64_t(const cbor_stream_t* stream, size_t offset, uint64_t* val);
+size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val);
 size_t cbor_serialize_uint64_t(cbor_stream_t* s, uint64_t val);
-size_t cbor_deserialize_int64_t(const cbor_stream_t* stream, size_t offset, int64_t* val);
+size_t cbor_deserialize_uint64_t(const cbor_stream_t* stream, size_t offset, uint64_t* val);
 size_t cbor_serialize_int64_t(cbor_stream_t* s, int64_t val);
-size_t cbor_deserialize_bool(const cbor_stream_t* stream, size_t offset, bool* val);
+size_t cbor_deserialize_int64_t(const cbor_stream_t* stream, size_t offset, int64_t* val);
 size_t cbor_serialize_bool(cbor_stream_t* s, bool val);
-size_t cbor_deserialize_float_half(const cbor_stream_t* stream, size_t offset, float* val);
+size_t cbor_deserialize_bool(const cbor_stream_t* stream, size_t offset, bool* val);
 size_t cbor_serialize_float_half(cbor_stream_t* s, float val);
-size_t cbor_deserialize_float(const cbor_stream_t* stream, size_t offset, float* val);
+size_t cbor_deserialize_float_half(const cbor_stream_t* stream, size_t offset, float* val);
 size_t cbor_serialize_float(cbor_stream_t* s, float val);
-size_t cbor_deserialize_double(const cbor_stream_t* stream, size_t offset, double* val);
+size_t cbor_deserialize_float(const cbor_stream_t* stream, size_t offset, float* val);
 size_t cbor_serialize_double(cbor_stream_t* s, double val);
+size_t cbor_deserialize_double(const cbor_stream_t* stream, size_t offset, double* val);
 
+size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
 /**
  * Deserialize bytes from @p stream to @p val
  *
@@ -176,7 +177,7 @@ size_t cbor_serialize_double(cbor_stream_t* s, double val);
  * @return Number of bytes written into @p val
  */
 size_t cbor_deserialize_byte_string(const cbor_stream_t* stream, size_t offset, char* val, size_t length);
-size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
+size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 /**
  * Deserialize unicode string from @p stream to @p val
  *
@@ -185,7 +186,6 @@ size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
  * @return Number of bytes written into @p val
  */
 size_t cbor_deserialize_unicode_string(const cbor_stream_t* stream, size_t offset, char* val, size_t length);
-size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
 /**
  * Serialize array of length @p array_length
@@ -221,8 +221,8 @@ size_t cbor_serialize_array(cbor_stream_t* s, size_t array_length);
  */
 size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, size_t* array_length);
 
-size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_array(cbor_stream_t* s);
+size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset);
 
 /**
  * Serialize map of length @p map_length
@@ -258,8 +258,8 @@ size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length);
  */
 size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_length);
 
-size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_map(cbor_stream_t* s);
+size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
 
 /**
  * Write a tag to give the next CBOR item additional semantics
