@@ -24,6 +24,7 @@
 
 #define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
     if (memcmp(stream.data, expected_value, expected_value_size) != 0) { \
+        printf("\n"); \
         printf("  CBOR encoded data: "); cbor_stream_print(&stream); printf("\n"); \
         cbor_stream_t tmp = {expected_value, expected_value_size, expected_value_size}; \
         printf("  Expected data    : "); cbor_stream_print(&tmp); printf("\n"); \
