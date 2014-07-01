@@ -442,6 +442,28 @@ static void test_major_type_5_invalid(void)
     }
 }
 
+static void test_major_type_6(void)
+{
+    char buffer[128];
+
+    {
+        cbor_clear(&stream);
+
+        const char* input = "1";
+        // CBOR: byte string of length 1 marked with a tag to indicate it is a positive bignum
+        // byte 1: (major type 6, additional information
+        // byte 2: (major type 2, additional 1 for the length)
+        // byte 3: bytes representing the bignum
+        unsigned char data[] = {0xc2, 0x41, 0x31};
+        TEST_ASSERT(cbor_write_tag(&stream, 2)); // write byte 1
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, input)); // write byte 2 and 3
+        CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
+        TEST_ASSERT(cbor_at_tag(&stream, 0));
+        TEST_ASSERT(cbor_deserialize_byte_string(&stream, 1, buffer, sizeof(buffer)));
+        CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
+    }
+}
+
 static void test_major_type_7(void)
 {
     {
@@ -562,6 +584,9 @@ void test_stream_decode(void)
     cbor_serialize_byte_string(&stream, "11");
     cbor_write_break(&stream);
 
+    cbor_write_tag(&stream, 2);
+    cbor_serialize_byte_string(&stream, "1");
+
     cbor_stream_decode(&stream);
 }
 
@@ -583,6 +608,7 @@ TestRef tests_cbor_all(void)
         new_TestFixture(test_major_type_4_invalid),
         new_TestFixture(test_major_type_5),
         new_TestFixture(test_major_type_5_invalid),
+        new_TestFixture(test_major_type_6),
         new_TestFixture(test_major_type_7),
         new_TestFixture(test_major_type_7_invalid)
     };

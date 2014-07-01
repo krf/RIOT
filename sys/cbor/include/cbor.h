@@ -138,6 +138,18 @@ size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_map(cbor_stream_t* s);
 
 /**
+ * Write a tag to give the next CBOR item additional semantics
+ *
+ * Also see https://tools.ietf.org/html/rfc7049#section-2.4 (Optional Tagging of Items)
+ */
+size_t cbor_write_tag(cbor_stream_t* s, uint tag);
+/**
+ * Whether we are at a tag symbol in stream @p s at offset @p offset
+ *
+ * @return True in case there is a tag symbol at the current offset
+ */
+bool cbor_at_tag(const cbor_stream_t* s, size_t offset);
+/**
  * Write a break symbol at the current offset in stream @p s
  *
  * Used for marking the end of indefinite length CBOR items

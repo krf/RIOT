@@ -593,6 +593,18 @@ size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset)
     return 1;
 }
 
+size_t cbor_write_tag(cbor_stream_t* s, uint tag)
+{
+    CBOR_ENSURE_SIZE(s, 1);
+    s->data[s->pos++] = CBOR_TAG | tag;
+    return 1;
+}
+
+bool cbor_at_tag(const cbor_stream_t* s, size_t offset)
+{
+    return cbor_at_end(s, offset) || CBOR_TYPE(s, offset) == CBOR_TAG;
+}
+
 size_t cbor_write_break(cbor_stream_t* s)
 {
     CBOR_ENSURE_SIZE(s, 1);
@@ -721,7 +733,11 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
         read_bytes += cbor_at_break(stream, offset);
         return read_bytes;
     }
-
+    case CBOR_TAG: {
+        uint tag = CBOR_ADDITIONAL_INFO(stream, offset);
+        printf("(tag: %u)\n", tag);
+        return 1;
+    }
     case CBOR_7: {
         switch (stream->data[offset]) {
         case CBOR_FALSE:
