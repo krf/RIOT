@@ -17,6 +17,66 @@
  * @file
  * @brief       Implementation of a CBOR serializer/deserializer in C
  *
+ * This is an implementation suited for constrained devices
+ * Characteristics:
+ * - No dynamic memory allocation (i.e. no calls to @e malloc, @e free) used throughout the implementation
+ * - User may allocate static buffers, this implementation uses the space provided by them (cf. @ref cbor_stream_t)
+ *
+ * @par Supported types (categorized by major type (MT)):
+ *
+ * - Major type 0 (unsigned integer): Full support. Relevant functions:
+ *   - cbor_serialize_int(), cbor_deserialize_int()
+ *   - cbor_serialize_uint64_t(), cbor_deserialize_uint64_t()
+ *
+ * - Major type 1 (negative integer): Full support. Relevant functions:
+ *   - cbor_serialize_int(), cbor_deserialize_int()
+ *   - cbor_serialize_int64_t(), cbor_deserialize_int64_t()
+ *
+ * - Major type 2 (byte string): Full support. Relevant functions:
+ *   - cbor_serialize_byte_string(), cbor_deserialize_byte_string()
+ *
+ * - Major type 3 (unicode string): Basic support (see below). Relevant functions:
+ *   - cbor_serialize_unicode_string(), cbor_deserialize_unicode_string()
+ *
+ * - Major type 4 (array of data items): Full support. Relevant functions:
+ *   - cbor_serialize_array(), cbor_deserialize_array()
+ *   - cbor_serialize_indefinite_array(), cbor_deserialize_indefinite_array(), cbor_at_break()
+ *
+ * - Major type 5 (map of pairs of data items): Full support. Relevant functions:
+ *   - cbor_serialize_map(), cbor_deserialize_map()
+ *   - cbor_serialize_indefinite_map(), cbor_deserialize_indefinite_map(), cbor_at_break()
+ *
+ * - Major type 6 (optional semantic tagging of other major types): Basic support (see below). Relevant functions:
+ *   - cbor_write_tag()
+ *
+ * - Major type 7 (floating-point numbers and values with no content): Basic support (see below). Relevant functions:
+ *   - cbor_serialize_float_half(), cbor_deserialize_float_half()
+ *   - cbor_serialize_float(), cbor_deserialize_float()
+ *   - cbor_serialize_double(), cbor_deserialize_double()
+ *   - cbor_serialize_bool(), cbor_deserialize_bool()
+ *
+ * @par Notes about major type 3:
+ * Since we do not have a standardised C type for representing Unicode code points,
+ * we just provide API to serialize/deserialize @e char* arrays. The user then
+ * has to transform that into a meaningful representation
+ *
+ * @par Notes about major type 6 (cf. https://tools.ietf.org/html/rfc7049#section-2.4):
+ * Since we do not have C types for representing bignums/bigfloats/decimal-fraction
+ * we do not provide API to serialize/deserialize them at all.
+ * You can still read out the actual data item behind the tag (via cbor_deserialize_byte_string())
+ * and interpret it yourself.
+ *
+ * @par Notes about major type 7 and simple values (cf. https://tools.ietf.org/html/rfc7049#section-2.3)
+ * Simple values:
+ * -   0-19: (Unassigned)    - No support
+ * -  20,21: True, False     - Supported (see cbor_serialize_bool(), cbor_deserialize_bool())
+ * -  22,23: Null, Undefined - No support (what's the use-case?)
+ * -  24-31: (Reserved)      - No support
+ * - 32-255: (Unassigned)    - No support
+ *
+ * TODO: API for Indefinite-Length Byte Strings and Text Strings
+ *       (see https://tools.ietf.org/html/rfc7049#section-2.2.2)
+ *
  * @author      Freie Universität Berlin, Computer Systems & Telematics
  * @author      Kevin Funk <kevin.funk@fu-berlin.de>
  * @author      Jana Cavojska <jana.cavojska9@gmail.com>
@@ -33,12 +93,14 @@
  * @brief Struct containing CBOR-encoded data
  *
  * A typical usage of CBOR looks like:
- * @code{.cpp}
+ * @code
+ * unsigned char data[1024];
  * cbor_stream_t stream;
- * cbor_init(&stream, 1024); // allocate array with 1024 bytes
+ * cbor_init(&stream, data, sizeof(data));
  *
  * cbor_serialize_int(&stream, 5);
- * <do something with 'stream.data'>
+ * (...)
+ * <data contains CBOR encoded items now>
  *
  * cbor_destroy(&stream);
  * @endcode
@@ -125,14 +187,76 @@ size_t cbor_serialize_byte_string(cbor_stream_t* s, const char* val);
 size_t cbor_deserialize_unicode_string(const cbor_stream_t* stream, size_t offset, char* val, size_t length);
 size_t cbor_serialize_unicode_string(cbor_stream_t* s, const char* val);
 
-size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, size_t* array_length);
+/**
+ * Serialize array of length @p array_length
+ *
+ * Basic usage:
+ * @code
+ * cbor_serialize_array(&stream, 2); // array of length 2 follows
+ * cbor_serialize_int(&stream, 1)); // write item 1
+ * cbor_serialize_int(&stream, 2)); // write item 2
+ * @endcode
+ *
+ * @note You have to make sure to serialize the correct amount of items.
+ * If you exceed the length @p array_length, items will just be appened as normal
+ *
+ * @param array_length Length of the array of items which follows
+ *
+ * @return Number of bytes written to stream @p s
+ */
 size_t cbor_serialize_array(cbor_stream_t* s, size_t array_length);
+/**
+ * Deserialize array of items
+ *
+ * Basic usage:
+ * @code
+ * size_t array_length;
+ * size_t offset = cbor_deserialize_array(&stream, 0, &array_length); // read out length of the array
+ * int i1, i2;
+ * offset += cbor_deserialize_int(&stream, offset, &i1); // read item 1
+ * offset += cbor_deserialize_int(&stream, offset, &i2); // read item 2
+ * @endcode
+ *
+ * @param array_length Where the array length is stored
+ */
+size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, size_t* array_length);
 
 size_t cbor_deserialize_indefinite_array(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_array(cbor_stream_t* s);
 
-size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_length);
+/**
+ * Serialize map of length @p map_length
+ *
+ * Basic usage:
+ * @code
+ * cbor_serialize_map(&stream, 2); // map of length 2 follows
+ * cbor_serialize_int(&stream, 1)); // write key 1
+ * cbor_serialize_byte_string(&stream, "1")); // write value 1
+ * cbor_serialize_int(&stream, 2)); // write key 2
+ * cbor_serialize_byte_string(&stream, "2")); // write value 2
+ * @endcode
+ *
+ * @param map_length Length of the map of items which follows
+ */
 size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length);
+/**
+ * Deserialize map of items
+ *
+ * Basic usage:
+ * @code
+ * size_t map_length;
+ * size_t offset = cbor_deserialize_map(&stream, 0, &map_length); // read out length of the map
+ * int key1, key1;
+ * char value1[8], value2[8];
+ * offset += cbor_deserialize_int(&stream, offset, &key1); // read key 1
+ * offset += cbor_deserialize_byte_string(&stream, offset, value1, sizeof(value)); // read value 1
+ * offset += cbor_deserialize_int(&stream, offset, &key2); // read key 2
+ * offset += cbor_deserialize_byte_string(&stream, offset, value2, sizeof(value)); // read value 2
+ * @endcode
+ *
+ * @param array_length Where the array length is stored
+ */
+size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_length);
 
 size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
 size_t cbor_serialize_indefinite_map(cbor_stream_t* s);
