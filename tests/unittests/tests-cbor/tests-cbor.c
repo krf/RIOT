@@ -12,6 +12,7 @@
 
 #include "../unittests.h"
 
+#include "bitarithm.h"
 #include "cbor.h"
 
 #include <float.h>
@@ -72,6 +73,13 @@
     (a.tm_sec == b.tm_sec))
 // END: Comparator functions
 
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+#ifndef NAN
+#define NAN (0.0/0.0)
+#endif
+
 unsigned char data[1024];
 cbor_stream_t stream = {data, sizeof(data), 0};
 
@@ -97,7 +105,9 @@ static void test_major_type_0(void)
         CBOR_CHECK(int, int, stream, 0xffff, HEX_LITERAL(0x19, 0xff, 0xff), EQUAL_INT);
 
         CBOR_CHECK(int, int, stream, 0xffff+1,   HEX_LITERAL(0x1a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
+#if ARCH_32_BIT
         CBOR_CHECK(int, int, stream, 0x7fffffff, HEX_LITERAL(0x1a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
+#endif
     }
     {
         CBOR_CHECK(uint64_t, uint64_t, stream, 0x0,                   HEX_LITERAL(0x00), EQUAL_INT);
@@ -162,7 +172,9 @@ static void test_major_type_1(void)
         CBOR_CHECK(int, int, stream, -0xffff-1, HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
 
         CBOR_CHECK(int, int, stream, -0xffff-2,     HEX_LITERAL(0x3a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
+#if ARCH_32_BIT
         CBOR_CHECK(int, int, stream, -0x7fffffff-1, HEX_LITERAL(0x3a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
+#endif
     }
     {
         CBOR_CHECK(int64_t, int64_t, stream, -1,                      HEX_LITERAL(0x20), EQUAL_INT);
@@ -473,6 +485,7 @@ static void test_major_type_6(void)
         TEST_ASSERT(cbor_deserialize_byte_string(&stream, 1, buffer, sizeof(buffer)));
         CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
+#ifdef BUILD_FOR_NATIVE
     {
         cbor_clear(&stream);
 
@@ -509,6 +522,7 @@ static void test_major_type_6(void)
         TEST_ASSERT(cbor_deserialize_date_time_epoch(&stream, 0, &val2));
         CBOR_CHECK_DESERIALIZED(val, val2, EQUAL_INT);
     }
+#endif
 }
 
 static void test_major_type_7(void)
@@ -553,8 +567,10 @@ static void test_major_type_7(void)
 
         // check examples from the CBOR RFC
         CBOR_CHECK(double, double, stream, 1.1, HEX_LITERAL(0xfb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a), EQUAL_FLOAT);
-        CBOR_CHECK(double, double, stream, 1.e+300, HEX_LITERAL(0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c), EQUAL_FLOAT);
         CBOR_CHECK(double, double, stream, -4.1, HEX_LITERAL(0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66), EQUAL_FLOAT);
+#if ARCH_32_BIT
+        CBOR_CHECK(double, double, stream, 1.e+300, HEX_LITERAL(0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c), EQUAL_FLOAT);
+#endif
     }
 }
 
@@ -592,6 +608,7 @@ static void test_major_type_7_invalid(void)
     }
 }
 
+#ifdef BUILD_FOR_NATIVE
 /**
  * Manual test for testing the cbor_stream_decode function
  */
@@ -642,6 +659,7 @@ void test_stream_decode(void)
 
     cbor_stream_decode(&stream);
 }
+#endif
 
 /**
  * See examples from CBOR RFC (cf. Appendix A. Examples)
@@ -678,7 +696,10 @@ void tests_cbor(void)
 {
     (void)manual_test; // fix unused warning
     //manual_test();
+
+#ifdef BUILD_FOR_NATIVE
     test_stream_decode();
+#endif
 
     TESTS_RUN(tests_cbor_all());
 }

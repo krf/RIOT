@@ -95,8 +95,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
-struct tm;
+#include <time.h>
 
 /**
  * @brief Struct containing CBOR-encoded data
@@ -157,10 +156,12 @@ void cbor_destroy(cbor_stream_t* stream);
  */
 void cbor_stream_print(cbor_stream_t* stream);
 
+#ifdef BUILD_FOR_NATIVE
 /**
  * Decode CBOR from @p stream
  */
 void cbor_stream_decode(cbor_stream_t* stream);
+#endif
 
 size_t cbor_serialize_int(cbor_stream_t* s, int val);
 size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val);
@@ -270,6 +271,43 @@ size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_l
 size_t cbor_serialize_indefinite_map(cbor_stream_t* s);
 size_t cbor_deserialize_indefinite_map(const cbor_stream_t* s, size_t offset);
 
+#ifdef BUILD_FOR_NATIVE
+/**
+ * Serialize date and time
+ *
+ * Basic usage:
+ * @code
+ * struct tm val;
+ * val.tm_year = 114;
+ * val.tm_mon = 6;
+ * val.tm_mday = 1;
+ * val.tm_hour = 15;
+ * val.tm_min = 0;
+ * val.tm_sec = 0;
+ * mktime(&val);
+ * cbor_serialize_date_time(&stream, &val);
+ * @endcode
+ *
+ * @param val  tm struct containing the date/time info to be encoded
+ */
+size_t cbor_serialize_date_time(cbor_stream_t* stream, struct tm* val);
+/**
+ * Deserialize date and time
+ *
+ * Basic usage:
+ * @code
+ * struct tm val;
+ * cbor_deserialize_date_time(&stream, 0, &val);
+ * @endcode
+ *
+ * @param val  tm struct where the decoded date/time will be stored
+ */
+size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, struct tm* val);
+
+size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val);
+size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val);
+#endif
+
 /**
  * Write a tag to give the next CBOR item additional semantics
  *
@@ -302,42 +340,6 @@ bool cbor_at_break(const cbor_stream_t* s, size_t offset);
  * @return True in case @p offset marks the end of the stream
  */
 bool cbor_at_end(const cbor_stream_t* s, size_t offset);
-
-/**
- * Deserialize date and time
- *
- * Basic usage:
- * @code
- * struct tm val;
- * cbor_deserialize_date_time(&stream, 0, &val);
- * @endcode
- *
- * @param val  tm struct where the decoded date/time will be stored
- */
-size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, struct tm* val);
-
-/**
- * Serialize date and time
- *
- * Basic usage:
- * @code
- * struct tm val;
- * val.tm_year = 114;
- * val.tm_mon = 6;
- * val.tm_mday = 1;
- * val.tm_hour = 15;
- * val.tm_min = 0;
- * val.tm_sec = 0;
- * mktime(&val);
- * cbor_serialize_date_time(&stream, &val);
- * @endcode
- *
- * @param val  tm struct containing the date/time info to be encoded
- */
-size_t cbor_serialize_date_time(cbor_stream_t* stream, struct tm* val);
-
-size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val);
-size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val);
 
 #endif
 

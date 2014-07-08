@@ -19,18 +19,18 @@
 
 #include "cbor.h"
 
-#include <arpa/inet.h>
-#include <assert.h>
+#include "net_help.h"
+
 #include <inttypes.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #define CBOR_TYPE_MASK          0xE0    // top 3 bits
 #define CBOR_INFO_MASK          0x1F    // low 5 bits
+
 
 // Jump Table for Initial Byte (cf. table 5)
 #define CBOR_UINT       0x00            // type 0
@@ -77,13 +77,20 @@
 // Extra defines not related to the protocol itself
 #define CBOR_STREAM_PRINT_BUFFERSIZE 1024 // bytes
 
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+#ifndef NAN
+#define NAN (0.0/0.0)
+#endif
+
 /**
  * Convert float @p x to network format
  */
 static float htonf(float x)
 {
     union u { float f; uint32_t i; } u = { .f = x };
-    u.i = htonl(u.i);
+    u.i = HTONL(u.i);
     return u.f;
 }
 
@@ -93,7 +100,7 @@ static float htonf(float x)
 static float ntohf(float x)
 {
     union u { float f; uint32_t i; } u = { .f = x };
-    u.i = ntohl(u.i);
+    u.i = NTOHL(u.i);
     return u.f;
 }
 
@@ -102,7 +109,7 @@ static float ntohf(float x)
  */
 static uint64_t htonll(uint64_t x)
 {
-    return (((uint64_t)htonl(x)) << 32) + htonl(x >> 32);
+    return (((uint64_t)HTONL(x)) << 32) + HTONL(x >> 32);
 }
 
 /**
@@ -110,7 +117,7 @@ static uint64_t htonll(uint64_t x)
  */
 static uint64_t ntohll(uint64_t x)
 {
-    return (((uint64_t)ntohl(x)) << 32) + ntohl(x >> 32);
+    return (((uint64_t)NTOHL(x)) << 32) + NTOHL(x >> 32);
 }
 
 /**
@@ -244,7 +251,8 @@ void cbor_destroy(cbor_stream_t* stream)
 
 static size_t encode_int(unsigned char major_type, cbor_stream_t* s, uint64_t val)
 {
-    assert(s);
+    if (!s)
+        return 0;
 
     if (val <= 23) {
         CBOR_ENSURE_SIZE(s, 1);
@@ -286,7 +294,9 @@ static size_t encode_int(unsigned char major_type, cbor_stream_t* s, uint64_t va
 
 static size_t decode_int(const cbor_stream_t* s, size_t offset, uint64_t* val)
 {
-    assert(s);
+    if (!s) {
+        return 0;
+    }
 
     unsigned char* data = &s->data[offset];
     unsigned char additional_info = CBOR_ADDITIONAL_INFO(s, offset);
@@ -341,7 +351,9 @@ static size_t encode_bytes(unsigned char major_type, cbor_stream_t* s, const cha
 
 static size_t decode_bytes(const cbor_stream_t* s, size_t offset, char* out, size_t length)
 {
-    assert(CBOR_TYPE(s, offset) == CBOR_BYTES || CBOR_TYPE(s, offset) == CBOR_TEXT);
+    if ((CBOR_TYPE(s, offset) != CBOR_BYTES && CBOR_TYPE(s, offset) != CBOR_TEXT) || !s || !out) {
+        return 0;
+    }
 
     uint64_t bytes_length;
     size_t bytes_start = decode_int(s, offset, &bytes_length);
@@ -359,8 +371,7 @@ static size_t decode_bytes(const cbor_stream_t* s, size_t offset, char* out, siz
 
 size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_UINT && CBOR_TYPE(stream, offset) != CBOR_NEGINT) {
+    if ((CBOR_TYPE(stream, offset) != CBOR_UINT && CBOR_TYPE(stream, offset) != CBOR_NEGINT) || !val) {
         return 0;
     }
 
@@ -387,8 +398,7 @@ size_t cbor_serialize_int(cbor_stream_t* s, int val)
 
 size_t cbor_deserialize_uint64_t(const cbor_stream_t* stream, size_t offset, uint64_t* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_UINT) {
+    if (CBOR_TYPE(stream, offset) != CBOR_UINT || !val) {
         return 0;
     }
 
@@ -402,8 +412,7 @@ size_t cbor_serialize_uint64_t(cbor_stream_t* s, uint64_t val)
 
 size_t cbor_deserialize_int64_t(const cbor_stream_t* stream, size_t offset, int64_t* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_UINT && CBOR_TYPE(stream, offset) != CBOR_NEGINT) {
+    if ((CBOR_TYPE(stream, offset) != CBOR_UINT && CBOR_TYPE(stream, offset) != CBOR_NEGINT) || !val) {
         return 0;
     }
 
@@ -430,8 +439,7 @@ size_t cbor_serialize_int64_t(cbor_stream_t* s, int64_t val)
 
 size_t cbor_deserialize_bool(const cbor_stream_t* stream, size_t offset, bool* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+    if (CBOR_TYPE(stream, offset) != CBOR_7 || !val) {
         return 0;
     }
 
@@ -449,8 +457,7 @@ size_t cbor_serialize_bool(cbor_stream_t* s, bool val)
 
 size_t cbor_deserialize_float_half(const cbor_stream_t* stream, size_t offset, float* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+    if (CBOR_TYPE(stream, offset) != CBOR_7 || !val) {
         return 0;
     }
 
@@ -467,15 +474,15 @@ size_t cbor_serialize_float_half(cbor_stream_t* s, float val)
 {
     CBOR_ENSURE_SIZE(s, 3);
     s->data[s->pos++] = CBOR_FLOAT16;
-    (*(uint16_t*)(&s->data[s->pos])) = htons(encode_float_half(val));
+    uint16_t encoded_val = HTONS(encode_float_half(val));
+    memcpy(s->data + s->pos, &encoded_val, 2);
     s->pos += 2;
     return 3;
 }
 
 size_t cbor_deserialize_float(const cbor_stream_t* stream, size_t offset, float* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+    if (CBOR_TYPE(stream, offset) != CBOR_7 || !val) {
         return 0;
     }
 
@@ -492,15 +499,15 @@ size_t cbor_serialize_float(cbor_stream_t* s, float val)
 {
     CBOR_ENSURE_SIZE(s, 5);
     s->data[s->pos++] = CBOR_FLOAT32;
-    (*(float*)(&s->data[s->pos])) = htonf(val);
+    float encoded_val = htonf(val);
+    memcpy(s->data + s->pos, &encoded_val, 4);
     s->pos += 4;
     return 5;
 }
 
 size_t cbor_deserialize_double(const cbor_stream_t* stream, size_t offset, double* val)
 {
-    assert(val);
-    if (CBOR_TYPE(stream, offset) != CBOR_7) {
+    if (CBOR_TYPE(stream, offset) != CBOR_7 || !val) {
         return 0;
     }
 
@@ -517,7 +524,8 @@ size_t cbor_serialize_double(cbor_stream_t* s, double val)
 {
     CBOR_ENSURE_SIZE(s, 9);
     s->data[s->pos++] = CBOR_FLOAT64;
-    (*(double*)(&s->data[s->pos])) = htond(val);
+    double encoded_val = htond(val);
+    memcpy(s->data + s->pos, &encoded_val, 8);
     s->pos += 8;
     return 9;
 }
@@ -550,8 +558,7 @@ size_t cbor_serialize_unicode_string(cbor_stream_t* stream, const char* val)
 
 size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, size_t* array_length)
 {
-    assert(array_length);
-    if (CBOR_TYPE(s, offset) != CBOR_ARRAY) {
+    if (CBOR_TYPE(s, offset) != CBOR_ARRAY || !array_length) {
         return 0;
     }
 
@@ -631,8 +638,7 @@ bool cbor_at_end(const cbor_stream_t* s, size_t offset)
 
 size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_length)
 {
-    assert(map_length);
-    if (CBOR_TYPE(s, offset) != CBOR_MAP) {
+    if (CBOR_TYPE(s, offset) != CBOR_MAP || !map_length) {
         return 0;
     }
 
@@ -648,6 +654,7 @@ size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length)
     return encode_int(CBOR_MAP, s, map_length);
 }
 
+#ifdef BUILD_FOR_NATIVE
 size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, struct tm* val)
 {
     if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS))
@@ -717,6 +724,7 @@ size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val)
     size_t written_bytes = encode_int(CBOR_UINT, stream, time);
     return written_bytes + 1; // + 1 tag byte
 }
+#endif
 
 // BEGIN: Printers
 void cbor_stream_print(cbor_stream_t* stream)
@@ -724,7 +732,7 @@ void cbor_stream_print(cbor_stream_t* stream)
     dump_memory(stream->data, stream->pos);
 }
 
-
+#ifdef BUILD_FOR_NATIVE
 /**
  * Decode CBOR data item from @p stream at position @p offset
  *
@@ -867,5 +875,6 @@ void cbor_stream_decode(cbor_stream_t* stream)
     }
     printf("\n");
 }
+#endif
 
 // END: Printers
