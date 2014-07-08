@@ -652,29 +652,34 @@ size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, st
 {
     if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS))
         return 0;
+
     char buffer[21];
     offset++;  // skip tag byte to decode date_time
     size_t read_bytes = cbor_deserialize_unicode_string(stream, offset, buffer, sizeof(buffer));
     const char* format = "%Y-%m-%dT%H:%M:%SZ";
-    if ( (strptime(buffer, format, val)) == 0)
+    if (strptime(buffer, format, val) == 0)
         return 0;
-    if ((mktime(val)) == -1)
+    if (mktime(val) == -1)
         return 0;
+
     return read_bytes + 1;  // + 1 tag byte
 }
 
-size_t cbor_serialize_date_time(const cbor_stream_t* stream, struct tm* val)
+size_t cbor_serialize_date_time(cbor_stream_t* stream, struct tm* val)
 {
-    int timeStrLen = 21;
-    CBOR_ENSURE_SIZE(stream, timeStrLen);
-    char* timeStr[timeStrLen];
+    static const int MAX_TIMESTRING_LENGTH = 21;
+    CBOR_ENSURE_SIZE(stream, MAX_TIMESTRING_LENGTH + 1); // + 1 tag byte
+
+    char time_str[MAX_TIMESTRING_LENGTH];
     const char* format = "%Y-%m-%dT%H:%M:%SZ";
-    if (strftime(timeStr, (size_t) timeStrLen, format, val) == 0)  // struct tm to string
+    if (strftime(time_str, sizeof(time_str), format, val) == 0)  // struct tm to string
         return 0;
-    uint tag = 0;  // 0 for standard date/time string;
-    cbor_write_tag(stream, tag);
-    size_t len2 = cbor_serialize_unicode_string(stream, timeStr);
-    return len2 + 1;  // utf8 time string length + tag length
+
+    if (!cbor_write_tag(stream, CBOR_DATETIME_STRING_FOLLOWS))
+        return 0;
+
+    size_t written_bytes = cbor_serialize_unicode_string(stream, time_str);
+    return written_bytes + 1; // utf8 time string length + tag length
 }
 
 size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val)
@@ -694,7 +699,7 @@ size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offs
     return read_bytes + 1; // + 1 tag byte
 }
 
-size_t cbor_serialize_date_time_epoch(const cbor_stream_t* stream, time_t* val)
+size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val)
 {
     // we need at least 2 bytes (tag byte + at least 1 byte for the integer)
     CBOR_ENSURE_SIZE(stream, 2);
@@ -706,6 +711,7 @@ size_t cbor_serialize_date_time_epoch(const cbor_stream_t* stream, time_t* val)
     if (!cbor_write_tag(stream, CBOR_DATETIME_EPOCH_FOLLOWS)) {
         return 0;
     }
+
 
     uint64_t time = (uint64_t)val;
     size_t written_bytes = encode_int(CBOR_UINT, stream, time);
@@ -759,7 +765,7 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
             printf("(array, length: [indefinite])\n");
         } else {
             offset += read_bytes = decode_int(stream, offset, &array_length);
-            printf("(array, length: %d)\n", array_length);
+            printf("(array, length: %"PRIu64")\n", array_length);
         }
         size_t i = 0;
         while (is_indefinite ? !cbor_at_break(stream, offset) : i < array_length) {
@@ -785,7 +791,7 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
             printf("(map, length: [indefinite])\n");
         } else {
             offset += read_bytes = decode_int(stream, offset, &map_length);
-            printf("(map, length: %d)\n", map_length);
+            printf("(map, length: %"PRIu64")\n", map_length);
         }
         size_t i = 0;
         while (is_indefinite ? !cbor_at_break(stream, offset) : i < map_length) {
@@ -817,7 +823,7 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
         case CBOR_DATETIME_EPOCH_FOLLOWS: {
             time_t time;
             size_t read_bytes = cbor_deserialize_date_time_epoch(stream, offset, &time);
-            printf("date/time epoch: %d)\n", time);
+            printf("date/time epoch: %d)\n", (int)time);
             return read_bytes;
         }
         default:

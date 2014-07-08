@@ -334,10 +334,10 @@ size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, st
  *
  * @param val  tm struct containing the date/time info to be encoded
  */
-size_t cbor_serialize_date_time(const cbor_stream_t* stream, struct tm* val);
+size_t cbor_serialize_date_time(cbor_stream_t* stream, struct tm* val);
 
 size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val);
-size_t cbor_serialize_date_time_epoch(const cbor_stream_t* stream, time_t* val);
+size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val);
 
 #endif
 
