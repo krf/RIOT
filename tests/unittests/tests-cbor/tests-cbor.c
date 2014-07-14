@@ -528,6 +528,8 @@ static void test_major_type_6(void)
 #endif
 }
 
+#define CBOR_NO_FLOAT 1
+
 static void test_major_type_7(void)
 {
     {
@@ -535,6 +537,7 @@ static void test_major_type_7(void)
         CBOR_CHECK(bool, bool, stream, false, HEX_LITERAL(0xf4), EQUAL_INT);
         CBOR_CHECK(bool, bool, stream, true,  HEX_LITERAL(0xf5), EQUAL_INT);
     }
+#ifndef CBOR_NO_FLOAT
     {
         /* check border conditions */
         CBOR_CHECK(float, float_half, stream, -.0f, HEX_LITERAL(0xf9, 0x80, 0x00), EQUAL_FLOAT);
@@ -575,6 +578,7 @@ static void test_major_type_7(void)
         CBOR_CHECK(double, double, stream, 1.e+300, HEX_LITERAL(0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c), EQUAL_FLOAT);
 #endif
     }
+#endif /* CBOR_NO_FLOAT */
 }
 
 static void test_major_type_7_invalid(void)
@@ -586,12 +590,14 @@ static void test_major_type_7_invalid(void)
 
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_bool(&stream, true));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
+#ifndef CBOR_NO_FLOAT
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_float_half(&stream, 0.f));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_float(&stream, 0.f));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_double(&stream, 0));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
+#endif
 
         cbor_destroy(&stream);
     }
@@ -602,12 +608,14 @@ static void test_major_type_7_invalid(void)
 
         bool val_bool = 0;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_bool(&stream, 0, &val_bool));
+#ifndef CBOR_NO_FLOAT
         float val_float = 0;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_float(&stream, 0, &val_float));
         float val_float_half = 0;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_float_half(&stream, 0, &val_float_half));
         double val_double = 0;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_double(&stream, 0, &val_double));
+#endif /* CBOR_NO_FLOAT */
     }
 }
 
@@ -623,9 +631,11 @@ void test_stream_decode(void)
     cbor_serialize_uint64_t(&stream, 2llu);
     cbor_serialize_int64_t(&stream, 3);
     cbor_serialize_bool(&stream, true);
+#ifndef CBOR_NO_FLOAT
     cbor_serialize_float_half(&stream, 1.1f);
     cbor_serialize_float(&stream, 1.5f);
     cbor_serialize_double(&stream, 2.0);
+#endif /* CBOR_NO_FLOAT */
     cbor_serialize_byte_string(&stream, "abc");
     cbor_serialize_unicode_string(&stream, "def");
 

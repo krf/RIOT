@@ -181,12 +181,14 @@ size_t cbor_serialize_int64_t(cbor_stream_t *s, int64_t val);
 size_t cbor_deserialize_int64_t(const cbor_stream_t *stream, size_t offset, int64_t *val);
 size_t cbor_serialize_bool(cbor_stream_t *s, bool val);
 size_t cbor_deserialize_bool(const cbor_stream_t *stream, size_t offset, bool *val);
+#ifndef CBOR_NO_FLOAT
 size_t cbor_serialize_float_half(cbor_stream_t *s, float val);
 size_t cbor_deserialize_float_half(const cbor_stream_t *stream, size_t offset, float *val);
 size_t cbor_serialize_float(cbor_stream_t *s, float val);
 size_t cbor_deserialize_float(const cbor_stream_t *stream, size_t offset, float *val);
 size_t cbor_serialize_double(cbor_stream_t *s, double val);
 size_t cbor_deserialize_double(const cbor_stream_t *stream, size_t offset, double *val);
+#endif /* CBOR_NO_FLOAT */
 
 size_t cbor_serialize_byte_string(cbor_stream_t *s, const char *val);
 /**
