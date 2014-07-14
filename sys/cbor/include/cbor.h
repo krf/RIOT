@@ -159,6 +159,18 @@ void cbor_stream_print(cbor_stream_t *stream);
 #ifdef BOARD_NATIVE
 /**
  * Decode CBOR from @p stream
+ *
+ * This method interprets the data and prints each item in its natural representation
+ *
+ * Example output:
+ * @code
+ * Data:
+ * (int, 1)
+ * (bool, 1)
+ * (float, 1.099609)
+ * (tag: 0, date/time string: "Mon Jul 14 19:07:40 2014")
+ * (tag: 1, date/time epoch: 1405357660)
+ * @endcode
  */
 void cbor_stream_decode(cbor_stream_t *stream);
 #endif
