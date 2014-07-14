@@ -80,26 +80,25 @@
 /**
  * Convert float @p x to network format
  */
-static float htonf(float x)
+static uint32_t htonf(float x)
 {
     union u {
         float f;
         uint32_t i;
     } u = { .f = x };
-    u.i = HTONL(u.i);
-    return u.f;
+    return HTONL(u.i);
 }
 
 /**
  * Convert float @p x to host format
  */
-static float ntohf(float x)
+static float ntohf(uint32_t x)
 {
     union u {
         float f;
         uint32_t i;
-    } u = { .f = x };
-    u.i = NTOHL(u.i);
+    } u;
+    u.i = NTOHL(x);
     return u.f;
 }
 
@@ -122,27 +121,22 @@ static uint64_t ntohll(uint64_t x)
 /**
  * Convert double @p x to network format
  */
-static double htond(double x)
+static uint64_t htond(double x)
 {
-    double res;
-    uint64_t *in = (uint64_t *)&x;
-    uint64_t *out = (uint64_t *)&res;
-
-    out[0] = htonll(in[0]);
-    return res;
+    return htonll(*((uint64_t *)&x));
 }
 
 /**
  * Convert double @p x to host format
  */
-static double ntohd(double x)
+static double ntohd(uint64_t x)
 {
-    double res;
-    uint64_t *in = (uint64_t *)&x;
-    uint64_t *out = (uint64_t *)&res;
-
-    out[0] = ntohll(in[0]);
-    return res;
+    union u {
+        double d;
+        uint64_t i;
+    } u;
+    u.i = ntohll(x);
+    return u.d;
 }
 
 /**
@@ -523,7 +517,7 @@ size_t cbor_deserialize_float(const cbor_stream_t *stream, size_t offset, float 
     unsigned char *data = &stream->data[offset];
 
     if (*data == CBOR_FLOAT32) {
-        *val = ntohf(*(float *)(data + 1));
+        *val = ntohf(*(uint32_t *)(data + 1));
         return 4;
     }
 
@@ -534,7 +528,7 @@ size_t cbor_serialize_float(cbor_stream_t *s, float val)
 {
     CBOR_ENSURE_SIZE(s, 5);
     s->data[s->pos++] = CBOR_FLOAT32;
-    float encoded_val = htonf(val);
+    uint32_t encoded_val = htonf(val);
     memcpy(s->data + s->pos, &encoded_val, 4);
     s->pos += 4;
     return 5;
@@ -549,7 +543,7 @@ size_t cbor_deserialize_double(const cbor_stream_t *stream, size_t offset, doubl
     unsigned char *data = &stream->data[offset];
 
     if (*data == CBOR_FLOAT64) {
-        *val = ntohd(*(double *)(data + 1));
+        *val = ntohd(*(uint64_t *)(data + 1));
         return 9;
     }
 
@@ -560,7 +554,7 @@ size_t cbor_serialize_double(cbor_stream_t *s, double val)
 {
     CBOR_ENSURE_SIZE(s, 9);
     s->data[s->pos++] = CBOR_FLOAT64;
-    double encoded_val = htond(val);
+    uint64_t encoded_val = htond(val);
     memcpy(s->data + s->pos, &encoded_val, 8);
     s->pos += 8;
     return 9;
