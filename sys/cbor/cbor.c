@@ -778,6 +778,7 @@ void cbor_stream_print(cbor_stream_t *stream)
     dump_memory(stream->data, stream->pos);
 }
 
+#ifndef CBOR_NO_STREAM_DECODE
 /**
  * Decode CBOR data item from @p stream at position @p offset
  *
@@ -953,5 +954,7 @@ void cbor_stream_decode(cbor_stream_t *stream)
 
     printf("\n");
 }
+
+#endif /* CBOR_NO_STREAM_DECODE */
 
 /* END: Printers */

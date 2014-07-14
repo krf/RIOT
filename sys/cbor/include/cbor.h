@@ -158,6 +158,7 @@ void cbor_destroy(cbor_stream_t *stream);
  */
 void cbor_stream_print(cbor_stream_t *stream);
 
+#ifndef CBOR_NO_STREAM_DECODE
 /**
  * Decode CBOR from @p stream
  *
@@ -174,6 +175,7 @@ void cbor_stream_print(cbor_stream_t *stream);
  * @endcode
  */
 void cbor_stream_decode(cbor_stream_t *stream);
+#endif /* CBOR_NO_STREAM_DECODE */
 
 size_t cbor_serialize_int(cbor_stream_t *s, int val);
 size_t cbor_deserialize_int(const cbor_stream_t *stream, size_t offset, int *val);

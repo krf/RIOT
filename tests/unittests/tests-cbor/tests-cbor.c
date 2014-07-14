@@ -619,7 +619,7 @@ static void test_major_type_7_invalid(void)
     }
 }
 
-#ifdef BOARD_NATIVE
+#ifndef CBOR_NO_STREAM_DECODE
 /**
  * Manual test for testing the cbor_stream_decode function
  */
@@ -674,7 +674,7 @@ void test_stream_decode(void)
 
     cbor_stream_decode(&stream);
 }
-#endif
+#endif /* CBOR_NO_STREAM_DECODE */
 
 /**
  * See examples from CBOR RFC (cf. Appendix A. Examples)
@@ -705,9 +705,9 @@ TestRef tests_cbor_all(void)
 
 void tests_cbor(void)
 {
-#ifdef BOARD_NATIVE
+#ifndef CBOR_NO_STREAM_DECODE
     test_stream_decode();
-#endif
+#endif /* CBOR_NO_STREAM_DECODE */
 
     TESTS_RUN(tests_cbor_all());
 }
