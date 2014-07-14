@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #ifndef CBOR_NO_CTIME
 #include <time.h>
-#endif CBOR_NO_CTIME
+#endif /* CBOR_NO_CTIME */
 
 #define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
     if (memcmp(stream.data, expected_value, expected_value_size) != 0) { \
