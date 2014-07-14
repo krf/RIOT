@@ -700,7 +700,7 @@ size_t cbor_serialize_map(cbor_stream_t *s, size_t map_length)
     return encode_int(CBOR_MAP, s, map_length);
 }
 
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
 size_t cbor_deserialize_date_time(const cbor_stream_t *stream, size_t offset, struct tm *val)
 {
     if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS)) {
@@ -787,7 +787,7 @@ void cbor_stream_print(cbor_stream_t *stream)
     dump_memory(stream->data, stream->pos);
 }
 
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
 /**
  * Decode CBOR data item from @p stream at position @p offset
  *

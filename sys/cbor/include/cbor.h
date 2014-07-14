@@ -154,7 +154,7 @@ void cbor_destroy(cbor_stream_t *stream);
  */
 void cbor_stream_print(cbor_stream_t *stream);
 
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
 /**
  * Decode CBOR from @p stream
  */
@@ -269,7 +269,7 @@ size_t cbor_deserialize_map(const cbor_stream_t *s, size_t offset, size_t *map_l
 size_t cbor_serialize_indefinite_map(cbor_stream_t *s);
 size_t cbor_deserialize_indefinite_map(const cbor_stream_t *s, size_t offset);
 
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
 /**
  * Serialize date and time
  *
