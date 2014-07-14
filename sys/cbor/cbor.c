@@ -811,7 +811,6 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
             char buffer[CBOR_STREAM_PRINT_BUFFERSIZE];
             size_t read_bytes = cbor_deserialize_byte_string(stream, offset, buffer, sizeof(buffer));
             printf("(byte string, \"%s\")\n", buffer);
-            \
             return read_bytes;
         }
 
@@ -819,7 +818,6 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
             char buffer[CBOR_STREAM_PRINT_BUFFERSIZE];
             size_t read_bytes = cbor_deserialize_unicode_string(stream, offset, buffer, sizeof(buffer));
             printf("(unicode string, \"%s\")\n", buffer);
-            \
             return read_bytes;
         }
 
