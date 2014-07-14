@@ -102,10 +102,10 @@ static void test_major_type_0(void)
         CBOR_CHECK(int, int, stream, 24,   HEX_LITERAL(0x18, 0x18), EQUAL_INT);
         CBOR_CHECK(int, int, stream, 0xff, HEX_LITERAL(0x18, 0xff), EQUAL_INT);
 
-        CBOR_CHECK(int, int, stream, 0xff+1, HEX_LITERAL(0x19, 0x01, 0x00), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, 0xff + 1, HEX_LITERAL(0x19, 0x01, 0x00), EQUAL_INT);
         CBOR_CHECK(int, int, stream, 0xffff, HEX_LITERAL(0x19, 0xff, 0xff), EQUAL_INT);
 
-        CBOR_CHECK(int, int, stream, 0xffff+1,   HEX_LITERAL(0x1a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, 0xffff + 1,   HEX_LITERAL(0x1a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
 #if ARCH_32_BIT
         CBOR_CHECK(int, int, stream, 0x7fffffff, HEX_LITERAL(0x1a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
 #endif
@@ -135,9 +135,9 @@ static void test_major_type_0_invalid(void)
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 24));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xff+1));
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xff + 1));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
-        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xffff+1));
+        TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xffff + 1));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
         /* let's do this for 'cbor_serialize_int64_t', too */
@@ -154,7 +154,7 @@ static void test_major_type_0_invalid(void)
         cbor_stream_t stream = {data, 1, 1};
 
         int val_int = 0;
-        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_int(&stream, 0, &val_int ));
+        TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_int(&stream, 0, &val_int));
         uint64_t val_uint64_t = 0;
         TEST_ASSERT_EQUAL_INT(0, cbor_deserialize_uint64_t(&stream, 0, &val_uint64_t));
     }
@@ -167,22 +167,22 @@ static void test_major_type_1(void)
         CBOR_CHECK(int, int, stream, -24, HEX_LITERAL(0x37), EQUAL_INT);
 
         CBOR_CHECK(int, int, stream, -25,     HEX_LITERAL(0x38, 0x18), EQUAL_INT);
-        CBOR_CHECK(int, int, stream, -0xff-1, HEX_LITERAL(0x38, 0xff), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, -0xff - 1, HEX_LITERAL(0x38, 0xff), EQUAL_INT);
 
-        CBOR_CHECK(int, int, stream, -0xff-2,   HEX_LITERAL(0x39, 0x01, 0x00), EQUAL_INT);
-        CBOR_CHECK(int, int, stream, -0xffff-1, HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, -0xff - 2,   HEX_LITERAL(0x39, 0x01, 0x00), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, -0xffff - 1, HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
 
-        CBOR_CHECK(int, int, stream, -0xffff-2,     HEX_LITERAL(0x3a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, -0xffff - 2,     HEX_LITERAL(0x3a, 0x00, 0x01, 0x00, 0x00), EQUAL_INT);
 #if ARCH_32_BIT
-        CBOR_CHECK(int, int, stream, -0x7fffffff-1, HEX_LITERAL(0x3a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
+        CBOR_CHECK(int, int, stream, -0x7fffffff - 1, HEX_LITERAL(0x3a, 0x7f, 0xff, 0xff, 0xff), EQUAL_INT);
 #endif
     }
     {
         CBOR_CHECK(int64_t, int64_t, stream, -1,                      HEX_LITERAL(0x20), EQUAL_INT);
-        CBOR_CHECK(int64_t, int64_t, stream, -0xff-1,                 HEX_LITERAL(0x38, 0xff), EQUAL_INT);
-        CBOR_CHECK(int64_t, int64_t, stream, -0xffff-1,               HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
-        CBOR_CHECK(int64_t, int64_t, stream, -0xffffffffll-1,         HEX_LITERAL(0x3a, 0xff, 0xff, 0xff, 0xff), EQUAL_INT);
-        CBOR_CHECK(int64_t, int64_t, stream, -0x7fffffffffffffffll-1, HEX_LITERAL(0x3b, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff), EQUAL_INT);
+        CBOR_CHECK(int64_t, int64_t, stream, -0xff - 1,                 HEX_LITERAL(0x38, 0xff), EQUAL_INT);
+        CBOR_CHECK(int64_t, int64_t, stream, -0xffff - 1,               HEX_LITERAL(0x39, 0xff, 0xff), EQUAL_INT);
+        CBOR_CHECK(int64_t, int64_t, stream, -0xffffffffll - 1,         HEX_LITERAL(0x3a, 0xff, 0xff, 0xff, 0xff), EQUAL_INT);
+        CBOR_CHECK(int64_t, int64_t, stream, -0x7fffffffffffffffll - 1, HEX_LITERAL(0x3b, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff), EQUAL_INT);
     }
 }
 
@@ -217,7 +217,7 @@ static void test_major_type_2(void)
 
     {
         cbor_clear(&stream);
-        const char* input = "";
+        const char *input = "";
         unsigned char data[] = {0x40};
         TEST_ASSERT(cbor_serialize_byte_string(&stream, input));
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
@@ -226,7 +226,7 @@ static void test_major_type_2(void)
     }
     {
         cbor_clear(&stream);
-        const char* input = "a";
+        const char *input = "a";
         unsigned char data[] = {0x41, 0x61};
         TEST_ASSERT(cbor_serialize_byte_string(&stream, input));
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
@@ -255,7 +255,7 @@ static void test_major_type_3(void)
 
     {
         cbor_clear(&stream);
-        const char* input = "";
+        const char *input = "";
         unsigned char data[] = {0x60};
         TEST_ASSERT(cbor_serialize_unicode_string(&stream, input));
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
@@ -264,7 +264,7 @@ static void test_major_type_3(void)
     }
     {
         cbor_clear(&stream);
-        const char* input = "a";
+        const char *input = "a";
         unsigned char data[] = {0x61, 0x61};
         TEST_ASSERT(cbor_serialize_unicode_string(&stream, input));
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
@@ -346,6 +346,7 @@ static void test_major_type_4(void)
         /* deserialization */
         size_t offset = cbor_deserialize_indefinite_array(&stream, 0);
         int count = 0;
+
         while (!cbor_at_break(&stream, offset)) {
             int val;
             size_t read_bytes = cbor_deserialize_int(&stream, offset, &val);
@@ -353,6 +354,7 @@ static void test_major_type_4(void)
             offset += read_bytes;
             ++count;
         }
+
         TEST_ASSERT_EQUAL_INT(2, count);
         TEST_ASSERT(cbor_at_end(&stream, offset));
     }
@@ -391,9 +393,9 @@ static void test_major_type_5(void)
         TEST_ASSERT(cbor_serialize_int(&stream, 2));
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "2"));
         unsigned char data[] = {0xa2,
-            0x01, 0x41, 0x31, /* kv-pair 1 */
-            0x02, 0x41, 0x32, /* kv-pair 2 */
-        };
+                                0x01, 0x41, 0x31, /* kv-pair 1 */
+                                0x02, 0x41, 0x32, /* kv-pair 2 */
+                               };
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
         /* deserialization */
@@ -423,14 +425,16 @@ static void test_major_type_5(void)
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "2"));
         TEST_ASSERT(cbor_write_break(&stream));
         unsigned char data[] = {0xbf,
-            0x01, 0x41, 0x31, /* kv-pair 1 */
-            0x02, 0x41, 0x32, /* kv-pair 2 */
-            0xff};
+                                0x01, 0x41, 0x31, /* kv-pair 1 */
+                                0x02, 0x41, 0x32, /* kv-pair 2 */
+                                0xff
+                               };
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
         /* deserialization */
         size_t offset = cbor_deserialize_indefinite_map(&stream, 0);
         int count = 0;
+
         while (!cbor_at_break(&stream, offset)) {
             int key;
             char value[16];
@@ -441,6 +445,7 @@ static void test_major_type_5(void)
             TEST_ASSERT(read_bytes);
             ++count;
         }
+
         TEST_ASSERT_EQUAL_INT(2, count);
         TEST_ASSERT(cbor_at_end(&stream, offset));
     }
@@ -473,7 +478,7 @@ static void test_major_type_6(void)
     {
         cbor_clear(&stream);
 
-        const char* input = "1";
+        const char *input = "1";
         /* CBOR: byte string of length 1 marked with a tag to indicate it is a positive bignum */
         /* byte 1: (major type 6, additional information */
         /* byte 2: (major type 2, additional 1 for the length) */
@@ -651,7 +656,7 @@ void test_stream_decode(void)
 
     time_t rawtime;
     time(&rawtime);
-    struct tm* timeinfo = localtime(&rawtime);
+    struct tm *timeinfo = localtime(&rawtime);
     cbor_serialize_date_time(&stream, timeinfo);
     cbor_serialize_date_time_epoch(&stream, rawtime);
 
@@ -669,20 +674,20 @@ TestRef tests_cbor_all(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_major_type_0),
-        new_TestFixture(test_major_type_0_invalid),
-        new_TestFixture(test_major_type_1),
-        new_TestFixture(test_major_type_1_invalid),
-        new_TestFixture(test_major_type_2),
-        new_TestFixture(test_major_type_2_invalid),
-        new_TestFixture(test_major_type_3),
-        new_TestFixture(test_major_type_3_invalid),
-        new_TestFixture(test_major_type_4),
-        new_TestFixture(test_major_type_4_invalid),
-        new_TestFixture(test_major_type_5),
-        new_TestFixture(test_major_type_5_invalid),
-        new_TestFixture(test_major_type_6),
-        new_TestFixture(test_major_type_7),
-        new_TestFixture(test_major_type_7_invalid)
+                        new_TestFixture(test_major_type_0_invalid),
+                        new_TestFixture(test_major_type_1),
+                        new_TestFixture(test_major_type_1_invalid),
+                        new_TestFixture(test_major_type_2),
+                        new_TestFixture(test_major_type_2_invalid),
+                        new_TestFixture(test_major_type_3),
+                        new_TestFixture(test_major_type_3_invalid),
+                        new_TestFixture(test_major_type_4),
+                        new_TestFixture(test_major_type_4_invalid),
+                        new_TestFixture(test_major_type_5),
+                        new_TestFixture(test_major_type_5_invalid),
+                        new_TestFixture(test_major_type_6),
+                        new_TestFixture(test_major_type_7),
+                        new_TestFixture(test_major_type_7_invalid)
     };
 
     EMB_UNIT_TESTCALLER(CborTest, setUp, tearDown, fixtures);
