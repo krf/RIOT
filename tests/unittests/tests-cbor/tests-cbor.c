@@ -688,15 +688,8 @@ TestRef tests_cbor_all(void)
     return (TestRef)&CborTest;
 }
 
-static void manual_test(void)
-{
-}
-
 void tests_cbor(void)
 {
-    (void)manual_test; /* fix unused warning */
-    //manual_test();
-
 #ifdef BUILD_FOR_NATIVE
     test_stream_decode();
 #endif
