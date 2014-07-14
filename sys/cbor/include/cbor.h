@@ -1,7 +1,7 @@
 /**
  * Implementation of CBOR
  *
- * Copyright (C) 2014, Freie Universitaet Berlin (FUB).
+ * Copyright (C) 2014, Freie Universitaet Berlin
  *
  * This file is subject to the terms and conditions of the GNU Lesser General
  * Public License. See the file LICENSE in the top level directory for more
@@ -16,6 +16,9 @@
 /**
  * @file
  * @brief       Implementation of a CBOR serializer/deserializer in C
+ *
+ * @author      Kevin Funk <kfunk@kde.org>
+ * @author      Jana Cavojska <jana.cavojska9@gmail.com>
  *
  * This is an implementation suited for constrained devices
  * Characteristics:
@@ -83,10 +86,6 @@
  *
  * TODO: API for Indefinite-Length Byte Strings and Text Strings
  *       (see https://tools.ietf.org/html/rfc7049#section-2.2.2)
- *
- * @author      Freie Universität Berlin, Computer Systems & Telematics
- * @author      Kevin Funk <kevin.funk@fu-berlin.de>
- * @author      Jana Cavojska <jana.cavojska9@gmail.com>
  */
 
 #ifndef CBOR_H

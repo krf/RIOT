@@ -12,8 +12,7 @@
  * @file
  * @brief       Implementation of a CBOR serializer/deserializer in C
  *
- * @author      Freie Universität Berlin, Computer Systems & Telematics
- * @author      Kevin Funk <kevin.funk@fu-berlin.de>
+ * @author      Kevin Funk <kfunk@kde.org>
  * @author      Jana Cavojska <jana.cavojska9@gmail.com>
  */
 
