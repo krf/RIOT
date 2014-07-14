@@ -97,8 +97,7 @@ static float ntohf(uint32_t x)
     union u {
         float f;
         uint32_t i;
-    } u;
-    u.i = NTOHL(x);
+    } u = { .i = NTOHL(x) };
     return u.f;
 }
 
@@ -123,7 +122,11 @@ static uint64_t ntohll(uint64_t x)
  */
 static uint64_t htond(double x)
 {
-    return htonll(*((uint64_t *)&x));
+    union u {
+        double d;
+        uint64_t i;
+    } u = { .d = x };
+    return htonll(u.i);
 }
 
 /**
