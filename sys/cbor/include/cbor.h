@@ -96,7 +96,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#ifndef CBOR_NO_CTIME
 #include <time.h>
+#endif /* CBOR_NO_CTIME */
 
 /**
  * @brief Struct containing CBOR-encoded data
@@ -283,7 +285,7 @@ size_t cbor_deserialize_map(const cbor_stream_t *s, size_t offset, size_t *map_l
 size_t cbor_serialize_indefinite_map(cbor_stream_t *s);
 size_t cbor_deserialize_indefinite_map(const cbor_stream_t *s, size_t offset);
 
-#ifdef BOARD_NATIVE
+#ifndef CBOR_NO_CTIME
 /**
  * Serialize date and time
  *
@@ -318,7 +320,7 @@ size_t cbor_deserialize_date_time(const cbor_stream_t *stream, size_t offset, st
 
 size_t cbor_serialize_date_time_epoch(cbor_stream_t *stream, time_t val);
 size_t cbor_deserialize_date_time_epoch(const cbor_stream_t *stream, size_t offset, time_t *val);
-#endif
+#endif /* CBOR_NO_CTIME */
 
 /**
  * Write a tag to give the next CBOR item additional semantics

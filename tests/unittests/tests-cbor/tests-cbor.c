@@ -20,7 +20,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#ifndef CBOR_NO_CTIME
 #include <time.h>
+#endif CBOR_NO_CTIME
 
 #define CBOR_CHECK_SERIALIZED(stream, expected_value, expected_value_size) do { \
     if (memcmp(stream.data, expected_value, expected_value_size) != 0) { \
@@ -488,7 +490,7 @@ static void test_major_type_6(void)
         TEST_ASSERT(cbor_deserialize_byte_string(&stream, 1, buffer, sizeof(buffer)));
         CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
-#ifdef BOARD_NATIVE
+#ifndef CBOR_NO_CTIME
     {
         cbor_clear(&stream);
 
@@ -525,10 +527,8 @@ static void test_major_type_6(void)
         TEST_ASSERT(cbor_deserialize_date_time_epoch(&stream, 0, &val2));
         CBOR_CHECK_DESERIALIZED(val, val2, EQUAL_INT);
     }
-#endif
+#endif /* CBOR_NO_CTIME */
 }
-
-#define CBOR_NO_FLOAT 1
 
 static void test_major_type_7(void)
 {
@@ -661,11 +661,13 @@ void test_stream_decode(void)
     cbor_serialize_byte_string(&stream, "11");
     cbor_write_break(&stream);
 
+#ifndef CBOR_NO_CTIME
     time_t rawtime;
     time(&rawtime);
     struct tm *timeinfo = localtime(&rawtime);
     cbor_serialize_date_time(&stream, timeinfo);
     cbor_serialize_date_time_epoch(&stream, rawtime);
+#endif /* CBOR_NO_CTIME */
 
     cbor_write_tag(&stream, 2);
     cbor_serialize_byte_string(&stream, "1");

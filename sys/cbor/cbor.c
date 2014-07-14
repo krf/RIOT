@@ -691,7 +691,7 @@ size_t cbor_serialize_map(cbor_stream_t *s, size_t map_length)
     return encode_int(CBOR_MAP, s, map_length);
 }
 
-#ifdef BOARD_NATIVE
+#ifndef CBOR_NO_CTIME
 size_t cbor_deserialize_date_time(const cbor_stream_t *stream, size_t offset, struct tm *val)
 {
     if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS)) {
@@ -770,7 +770,7 @@ size_t cbor_serialize_date_time_epoch(cbor_stream_t *stream, time_t val)
     size_t written_bytes = encode_int(CBOR_UINT, stream, time);
     return written_bytes + 1; /* + 1 tag byte */
 }
-#endif
+#endif /* CBOR_NO_CTIME */
 
 /* BEGIN: Printers */
 void cbor_stream_print(cbor_stream_t *stream)
@@ -885,7 +885,7 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
             switch (tag) {
                     // Non-native builds likely don't have support for ctime (hence disable it there)
                     // TODO: Better check for availability of ctime functions?
-#ifdef BOARD_NATIVE
+#ifndef CBOR_NO_CTIME
                 case CBOR_DATETIME_STRING_FOLLOWS: {
                     char buf[64];
                     struct tm timeinfo;
@@ -902,7 +902,7 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
                     return read_bytes;
                 }
 
-#endif
+#endif /* CBOR_NO_CTIME */
 
                 default:
                     printf("unknown content)\n");
