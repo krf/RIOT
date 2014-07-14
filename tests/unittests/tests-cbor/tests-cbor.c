@@ -488,7 +488,7 @@ static void test_major_type_6(void)
         TEST_ASSERT(cbor_deserialize_byte_string(&stream, 1, buffer, sizeof(buffer)));
         CBOR_CHECK_DESERIALIZED(input, buffer, EQUAL_STRING);
     }
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
     {
         cbor_clear(&stream);
 
@@ -611,7 +611,7 @@ static void test_major_type_7_invalid(void)
     }
 }
 
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
 /**
  * Manual test for testing the cbor_stream_decode function
  */
@@ -693,7 +693,7 @@ TestRef tests_cbor_all(void)
 
 void tests_cbor(void)
 {
-#ifdef BUILD_FOR_NATIVE
+#ifdef BOARD_NATIVE
     test_stream_decode();
 #endif
 
