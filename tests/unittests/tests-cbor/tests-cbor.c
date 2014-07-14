@@ -38,7 +38,7 @@
     TEST_ASSERT(comparator_function(expected_value, actual_value)); \
 } while(0)
 
-/// Macro for checking PODs (int, float, ...)
+/* Macro for checking PODs (int, float, ...) */
 #define CBOR_CHECK(type, function_suffix, stream, input, expected_value, comparator) do { \
     type buffer; \
     unsigned char data[] = expected_value; \
@@ -52,7 +52,7 @@
 
 #define HEX_LITERAL(...) {__VA_ARGS__}
 
-// BEGIN: Comparator functions
+/* BEGIN: Comparator functions */
 #define EQUAL_INT(a, b) \
     (a == b)
 #define EQUAL_FLOAT(a, b) ( \
@@ -71,7 +71,7 @@
     (a.tm_hour == b.tm_hour) && \
     (a.tm_min == b.tm_min) && \
     (a.tm_sec == b.tm_sec))
-// END: Comparator functions
+/* END: Comparator functions */
 
 #ifndef INFINITY
 #define INFINITY (1.0/0.0)
@@ -122,14 +122,14 @@ static void test_major_type_0(void)
 static void test_major_type_0_invalid(void)
 {
     {
-        // check writing to stream that is not large enough
-        // basically tests internal 'encode_int' function
+        /* check writing to stream that is not large enough */
+        /* basically tests internal 'encode_int' function */
 
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
 
-        // check each possible branch in 'encode_int'
-        // (value in first byte, uint8 follows, uint16 follows, uint64 follows)
+        /* check each possible branch in 'encode_int' */
+        /* (value in first byte, uint8 follows, uint16 follows, uint64 follows) */
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 24));
@@ -139,17 +139,17 @@ static void test_major_type_0_invalid(void)
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_int(&stream, 0xffff+1));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
-        // let's do this for 'cbor_serialize_int64_t', too
-        // this uses 'encode_int' internally, as well, so let's just test if the
-        // 'cbor_serialize_int64_t' wrapper is sane
+        /* let's do this for 'cbor_serialize_int64_t', too */
+        /* this uses 'encode_int' internally, as well, so let's just test if the */
+        /* 'cbor_serialize_int64_t' wrapper is sane */
         TEST_ASSERT_EQUAL_INT(0, cbor_serialize_uint64_t(&stream, 0));
         TEST_ASSERT_EQUAL_INT(0, stream.pos);
 
         cbor_destroy(&stream);
     }
     {
-        // check reading from stream that contains other type of data
-        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        /* check reading from stream that contains other type of data */
+        unsigned char data[] = {0x40}; /* empty string encoded in CBOR */
         cbor_stream_t stream = {data, 1, 1};
 
         int val_int = 0;
@@ -188,7 +188,7 @@ static void test_major_type_1(void)
 static void test_major_type_1_invalid(void)
 {
     {
-        // check writing to stream that is not large enough (also see test_major_type_0_invalid)
+        /* check writing to stream that is not large enough (also see test_major_type_0_invalid) */
 
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
@@ -200,9 +200,9 @@ static void test_major_type_1_invalid(void)
     }
 
     {
-        // check reading from stream that contains other type of data
+        /* check reading from stream that contains other type of data */
 
-        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        unsigned char data[] = {0x40}; /* empty string encoded in CBOR */
         cbor_stream_t stream = {data, 1, 1};
 
         int64_t val = 0;
@@ -237,7 +237,7 @@ static void test_major_type_2(void)
 static void test_major_type_2_invalid(void)
 {
     {
-        // check writing to stream that is not large enough
+        /* check writing to stream that is not large enough */
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
 
@@ -275,7 +275,7 @@ static void test_major_type_3(void)
 static void test_major_type_3_invalid(void)
 {
     {
-        // check writing to stream that is not large enough
+        /* check writing to stream that is not large enough */
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
 
@@ -287,18 +287,18 @@ static void test_major_type_3_invalid(void)
 
 static void test_major_type_4(void)
 {
-    // uniform types
+    /* uniform types */
     {
         cbor_clear(&stream);
 
-        // serialization
+        /* serialization */
         TEST_ASSERT(cbor_serialize_array(&stream, 2));
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_int(&stream, 2));
         unsigned char data[] = {0x82, 0x01, 0x02};
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
-        // deserialization
+        /* deserialization */
         size_t array_length;
         size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
         TEST_ASSERT_EQUAL_INT(2, array_length);
@@ -308,7 +308,7 @@ static void test_major_type_4(void)
         offset += cbor_deserialize_int(&stream, offset, &i);
         TEST_ASSERT_EQUAL_INT(2, i);
     }
-    // mixed types
+    /* mixed types */
     {
         cbor_clear(&stream);
 
@@ -318,7 +318,7 @@ static void test_major_type_4(void)
         unsigned char data[] = {0x82, 0x01, 0x41, 0x61};
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
-        // deserialization
+        /* deserialization */
         size_t array_length;
         size_t offset = cbor_deserialize_array(&stream, 0, &array_length);
         TEST_ASSERT(offset);
@@ -330,11 +330,11 @@ static void test_major_type_4(void)
         offset += cbor_deserialize_byte_string(&stream, offset, buffer, sizeof(buffer));
         TEST_ASSERT_EQUAL_STRING("a", buffer);
     }
-    // indefinite array
+    /* indefinite array */
     {
         cbor_clear(&stream);
 
-        // serialization
+        /* serialization */
         TEST_ASSERT(cbor_serialize_indefinite_array(&stream));
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_int(&stream, 2));
@@ -342,7 +342,7 @@ static void test_major_type_4(void)
         unsigned char data[] = {0x9f, 0x01, 0x02, 0xff};
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
-        // deserialization
+        /* deserialization */
         size_t offset = cbor_deserialize_indefinite_array(&stream, 0);
         int count = 0;
         while (!cbor_at_break(&stream, offset)) {
@@ -360,7 +360,7 @@ static void test_major_type_4(void)
 static void test_major_type_4_invalid(void)
 {
     {
-        // check writing to stream that is not large enough
+        /* check writing to stream that is not large enough */
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
 
@@ -369,8 +369,8 @@ static void test_major_type_4_invalid(void)
         cbor_destroy(&stream);
     }
     {
-        // check reading from stream that contains other type of data
-        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        /* check reading from stream that contains other type of data */
+        unsigned char data[] = {0x40}; /* empty string encoded in CBOR */
         cbor_stream_t stream = {data, 1, 1};
 
         size_t array_length;
@@ -383,19 +383,19 @@ static void test_major_type_5(void)
     {
         cbor_clear(&stream);
 
-        // serialization
+        /* serialization */
         TEST_ASSERT(cbor_serialize_map(&stream, 2));
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "1"));
         TEST_ASSERT(cbor_serialize_int(&stream, 2));
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "2"));
         unsigned char data[] = {0xa2,
-            0x01, 0x41, 0x31, // kv-pair 1
-            0x02, 0x41, 0x32, // kv-pair 2
+            0x01, 0x41, 0x31, /* kv-pair 1 */
+            0x02, 0x41, 0x32, /* kv-pair 2 */
         };
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
-        // deserialization
+        /* deserialization */
         size_t map_length;
         size_t offset = cbor_deserialize_map(&stream, 0, &map_length);
         TEST_ASSERT_EQUAL_INT(2, map_length);
@@ -411,10 +411,10 @@ static void test_major_type_5(void)
         TEST_ASSERT_EQUAL_STRING("2", value);
     }
     {
-        // indefinite maps
+        /* indefinite maps */
         cbor_clear(&stream);
 
-        // serialization
+        /* serialization */
         TEST_ASSERT(cbor_serialize_indefinite_map(&stream));
         TEST_ASSERT(cbor_serialize_int(&stream, 1));
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "1"));
@@ -422,12 +422,12 @@ static void test_major_type_5(void)
         TEST_ASSERT(cbor_serialize_byte_string(&stream, "2"));
         TEST_ASSERT(cbor_write_break(&stream));
         unsigned char data[] = {0xbf,
-            0x01, 0x41, 0x31, // kv-pair 1
-            0x02, 0x41, 0x32, // kv-pair 2
+            0x01, 0x41, 0x31, /* kv-pair 1 */
+            0x02, 0x41, 0x32, /* kv-pair 2 */
             0xff};
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
 
-        // deserialization
+        /* deserialization */
         size_t offset = cbor_deserialize_indefinite_map(&stream, 0);
         int count = 0;
         while (!cbor_at_break(&stream, offset)) {
@@ -448,7 +448,7 @@ static void test_major_type_5(void)
 static void test_major_type_5_invalid(void)
 {
     {
-        // check writing to stream that is not large enough
+        /* check writing to stream that is not large enough */
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
 
@@ -457,8 +457,8 @@ static void test_major_type_5_invalid(void)
         cbor_destroy(&stream);
     }
     {
-        // check reading from stream that contains other type of data
-        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        /* check reading from stream that contains other type of data */
+        unsigned char data[] = {0x40}; /* empty string encoded in CBOR */
         cbor_stream_t stream = {data, 1, 1};
 
         size_t map_length;
@@ -473,13 +473,13 @@ static void test_major_type_6(void)
         cbor_clear(&stream);
 
         const char* input = "1";
-        // CBOR: byte string of length 1 marked with a tag to indicate it is a positive bignum
-        // byte 1: (major type 6, additional information
-        // byte 2: (major type 2, additional 1 for the length)
-        // byte 3: bytes representing the bignum
+        /* CBOR: byte string of length 1 marked with a tag to indicate it is a positive bignum */
+        /* byte 1: (major type 6, additional information */
+        /* byte 2: (major type 2, additional 1 for the length) */
+        /* byte 3: bytes representing the bignum */
         unsigned char data[] = {0xc2, 0x41, 0x31};
-        TEST_ASSERT(cbor_write_tag(&stream, 2)); // write byte 1
-        TEST_ASSERT(cbor_serialize_byte_string(&stream, input)); // write byte 2 and 3
+        TEST_ASSERT(cbor_write_tag(&stream, 2)); /* write byte 1 */
+        TEST_ASSERT(cbor_serialize_byte_string(&stream, input)); /* write byte 2 and 3 */
         CBOR_CHECK_SERIALIZED(stream, data, sizeof(data));
         TEST_ASSERT(cbor_at_tag(&stream, 0));
         TEST_ASSERT(cbor_deserialize_byte_string(&stream, 1, buffer, sizeof(buffer)));
@@ -489,10 +489,10 @@ static void test_major_type_6(void)
     {
         cbor_clear(&stream);
 
-        // CBOR: UTF-8 string marked with a tag 0 to indicate it is a standard date/time string
-        // byte 1: (major type 6, additional information
-        // byte 2: (major type 2, additional 23 for the length)
-        // bytes 3 to 23: bytes representing the date/time UTF-8 string
+        /* CBOR: UTF-8 string marked with a tag 0 to indicate it is a standard date/time string */
+        /* byte 1: (major type 6, additional information */
+        /* byte 2: (major type 2, additional 23 for the length) */
+        /* bytes 3 to 23: bytes representing the date/time UTF-8 string */
         unsigned char data[] = {0xC0, 0x74, 0x32, 0x30, 0x31, 0x34, 0x2D, 0x30, 0x37, 0x2D, 0x30, 0x31, 0x54, 0x31, 0x35, 0x3A, 0x30, 0x30, 0x3A, 0x30, 0x30, 0x5A};
         struct tm val;
         val.tm_year = 114;
@@ -513,7 +513,7 @@ static void test_major_type_6(void)
     {
         cbor_clear(&stream);
 
-        // CBOR: unsigned integer marked with a tag 1 to indicate it is a standard date/time epoch (similar to time_t)
+        /* CBOR: unsigned integer marked with a tag 1 to indicate it is a standard date/time epoch (similar to time_t) */
         unsigned char data[] = {0xC1, 0x01};
         time_t val = 1;
         TEST_ASSERT(cbor_serialize_date_time_epoch(&stream, val));
@@ -528,44 +528,44 @@ static void test_major_type_6(void)
 static void test_major_type_7(void)
 {
     {
-        // simple values
+        /* simple values */
         CBOR_CHECK(bool, bool, stream, false, HEX_LITERAL(0xf4), EQUAL_INT);
         CBOR_CHECK(bool, bool, stream, true,  HEX_LITERAL(0xf5), EQUAL_INT);
     }
     {
-        // check border conditions
+        /* check border conditions */
         CBOR_CHECK(float, float_half, stream, -.0f, HEX_LITERAL(0xf9, 0x80, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float_half, stream, .0f, HEX_LITERAL(0xf9, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float_half, stream, INFINITY, HEX_LITERAL(0xf9, 0x7c, 0x00), EQUAL_FLOAT);
-        // TODO: Broken: encode_float_half issue?
-        //CBOR_CHECK(float, float_half, stream, NAN, HEX_LITERAL(0xf9, 0x7e, 0x00), EQUAL_FLOAT);
+        /* TODO: Broken: encode_float_half issue? */
+        /*CBOR_CHECK(float, float_half, stream, NAN, HEX_LITERAL(0xf9, 0x7e, 0x00), EQUAL_FLOAT);*/
         CBOR_CHECK(float, float_half, stream, -INFINITY, HEX_LITERAL(0xf9, 0xfc, 0x00), EQUAL_FLOAT);
 
-        // check examples from the CBOR RFC
+        /* check examples from the CBOR RFC */
         CBOR_CHECK(float, float_half, stream, -4.f, HEX_LITERAL(0xf9, 0xc4, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float_half, stream, 1.f, HEX_LITERAL(0xf9, 0x3c, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float_half, stream, 1.5f, HEX_LITERAL(0xf9, 0x3e, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float_half, stream, 5.960464477539063e-8, HEX_LITERAL(0xf9, 0x00, 0x01), EQUAL_FLOAT);
     }
     {
-        // check border conditions
+        /* check border conditions */
         CBOR_CHECK(float, float, stream, .0f, HEX_LITERAL(0xfa, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, INFINITY, HEX_LITERAL(0xfa, 0x7f, 0x80, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, NAN, HEX_LITERAL(0xfa, 0x7f, 0xc0, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, -INFINITY, HEX_LITERAL(0xfa, 0xff, 0x80, 0x00, 0x00), EQUAL_FLOAT);
 
-        // check examples from the CBOR RFC
+        /* check examples from the CBOR RFC */
         CBOR_CHECK(float, float, stream, 100000.f, HEX_LITERAL(0xfa, 0x47, 0xc3, 0x50, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(float, float, stream, 3.4028234663852886e+38, HEX_LITERAL(0xfa, 0x7f, 0x7f, 0xff, 0xff), EQUAL_FLOAT);
     }
     {
-        // check border conditions
+        /* check border conditions */
         CBOR_CHECK(double, double, stream, .0f, HEX_LITERAL(0xfb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(double, double, stream, INFINITY, HEX_LITERAL(0xfb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(double, double, stream, NAN, HEX_LITERAL(0xfb, 0x7f, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
         CBOR_CHECK(double, double, stream, -INFINITY, HEX_LITERAL(0xfb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), EQUAL_FLOAT);
 
-        // check examples from the CBOR RFC
+        /* check examples from the CBOR RFC */
         CBOR_CHECK(double, double, stream, 1.1, HEX_LITERAL(0xfb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a), EQUAL_FLOAT);
         CBOR_CHECK(double, double, stream, -4.1, HEX_LITERAL(0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66), EQUAL_FLOAT);
 #if ARCH_32_BIT
@@ -577,7 +577,7 @@ static void test_major_type_7(void)
 static void test_major_type_7_invalid(void)
 {
     {
-        // check writing to stream that is not large enough
+        /* check writing to stream that is not large enough */
         cbor_stream_t stream;
         cbor_init(&stream, 0, 0);
 
@@ -593,8 +593,8 @@ static void test_major_type_7_invalid(void)
         cbor_destroy(&stream);
     }
     {
-        // check reading from stream that contains other type of data
-        unsigned char data[] = {0x40}; // empty string encoded in CBOR
+        /* check reading from stream that contains other type of data */
+        unsigned char data[] = {0x40}; /* empty string encoded in CBOR */
         cbor_stream_t stream = {data, 1, 1};
 
         bool val_bool = 0;
@@ -694,7 +694,7 @@ static void manual_test(void)
 
 void tests_cbor(void)
 {
-    (void)manual_test; // fix unused warning
+    (void)manual_test; /* fix unused warning */
     //manual_test();
 
 #ifdef BUILD_FOR_NATIVE

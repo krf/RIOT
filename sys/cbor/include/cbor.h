@@ -119,11 +119,11 @@
  */
 typedef struct cbor_stream_t
 {
-    /// Array containing CBOR encoded data
+    /* Array containing CBOR encoded data */
     unsigned char* data;
-    /// Size of the array
+    /* Size of the array */
     size_t size;
-    /// Index to the next free byte
+    /* Index to the next free byte */
     size_t pos;
 } cbor_stream_t;
 

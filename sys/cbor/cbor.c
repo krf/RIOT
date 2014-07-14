@@ -28,35 +28,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CBOR_TYPE_MASK          0xE0    // top 3 bits
-#define CBOR_INFO_MASK          0x1F    // low 5 bits
+#define CBOR_TYPE_MASK          0xE0    /* top 3 bits */
+#define CBOR_INFO_MASK          0x1F    /* low 5 bits */
 
 
-// Jump Table for Initial Byte (cf. table 5)
-#define CBOR_UINT       0x00            // type 0
-#define CBOR_NEGINT     0x20            // type 1
-#define CBOR_BYTES      0x40            // type 2
-#define CBOR_TEXT       0x60            // type 3
-#define CBOR_ARRAY      0x80            // type 4
-#define CBOR_MAP        0xA0            // type 5
-#define CBOR_TAG        0xC0            // type 6
-#define CBOR_7          0xE0            // type 7 (float and other types)
+/* Jump Table for Initial Byte (cf. table 5) */
+#define CBOR_UINT       0x00            /* type 0 */
+#define CBOR_NEGINT     0x20            /* type 1 */
+#define CBOR_BYTES      0x40            /* type 2 */
+#define CBOR_TEXT       0x60            /* type 3 */
+#define CBOR_ARRAY      0x80            /* type 4 */
+#define CBOR_MAP        0xA0            /* type 5 */
+#define CBOR_TAG        0xC0            /* type 6 */
+#define CBOR_7          0xE0            /* type 7 (float and other types) */
 
-// Major types (cf. section 2.1)
-// Major type 0: Unsigned integers
-#define CBOR_UINT8_FOLLOWS      24      // 0x18
-#define CBOR_UINT16_FOLLOWS     25      // 0x19
-#define CBOR_UINT32_FOLLOWS     26      // 0x1a
-#define CBOR_UINT64_FOLLOWS     27      // 0x1b
+/* Major types (cf. section 2.1) */
+/* Major type 0: Unsigned integers */
+#define CBOR_UINT8_FOLLOWS      24      /* 0x18 */
+#define CBOR_UINT16_FOLLOWS     25      /* 0x19 */
+#define CBOR_UINT32_FOLLOWS     26      /* 0x1a */
+#define CBOR_UINT64_FOLLOWS     27      /* 0x1b */
 
-// Indefinite Lengths for Some Major types (cf. section 2.2)
-#define CBOR_VAR_FOLLOWS        31      // 0x1f
+/* Indefinite Lengths for Some Major types (cf. section 2.2) */
+#define CBOR_VAR_FOLLOWS        31      /* 0x1f */
 
-// Major type 6: Semantic tagging
+/* Major type 6: Semantic tagging */
 #define CBOR_DATETIME_STRING_FOLLOWS        0
 #define CBOR_DATETIME_EPOCH_FOLLOWS         1
 
-// Major type 7: Float and other types
+/* Major type 7: Float and other types */
 #define CBOR_FALSE      (CBOR_7 | 20)
 #define CBOR_TRUE       (CBOR_7 | 21)
 #define CBOR_NULL       (CBOR_7 | 22)
@@ -69,13 +69,13 @@
 #define CBOR_TYPE(stream, offset) (stream->data[offset] & CBOR_TYPE_MASK)
 #define CBOR_ADDITIONAL_INFO(stream, offset) (stream->data[offset] & CBOR_INFO_MASK)
 
-/// Ensure that @p stream is big enough to fit @p bytes bytes, otherwise return 0
+/* Ensure that @p stream is big enough to fit @p bytes bytes, otherwise return 0 */
 #define CBOR_ENSURE_SIZE(stream, bytes) do { \
     if (stream->pos + bytes >= stream->size) { return 0; } \
 } while(0)
 
-// Extra defines not related to the protocol itself
-#define CBOR_STREAM_PRINT_BUFFERSIZE 1024 // bytes
+/* Extra defines not related to the protocol itself */
+#define CBOR_STREAM_PRINT_BUFFERSIZE 1024 /* bytes */
 
 #ifndef INFINITY
 #define INFINITY (1.0/0.0)
@@ -301,7 +301,7 @@ static size_t decode_int(const cbor_stream_t* s, size_t offset, uint64_t* val)
     unsigned char* data = &s->data[offset];
     unsigned char additional_info = CBOR_ADDITIONAL_INFO(s, offset);
 
-    *val = 0; // clear val first
+    *val = 0; /* clear val first */
     if (additional_info <= 23) {
         *val = (data[0] & CBOR_INFO_MASK);
         return 1;
@@ -344,7 +344,7 @@ static size_t encode_bytes(unsigned char major_type, cbor_stream_t* s, const cha
 
     CBOR_ENSURE_SIZE(s, length);
 
-    memcpy(&(s->data[s->pos]), data, length); // copy byte string into our cbor struct
+    memcpy(&(s->data[s->pos]), data, length); /* copy byte string into our cbor struct */
     s->pos += length;
     return bytes_start + length;
 }
@@ -378,9 +378,9 @@ size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val
     uint64_t buf;
     size_t read_bytes = decode_int(stream, offset, &buf);
     if (CBOR_TYPE(stream, offset) == CBOR_UINT) {
-        *val = buf; // resolve as CBOR_UINT
+        *val = buf; /* resolve as CBOR_UINT */
     } else {
-        *val = -1 -buf; // resolve as CBOR_NEGINT
+        *val = -1 -buf; /* resolve as CBOR_NEGINT */
     }
     return read_bytes;
 }
@@ -388,10 +388,10 @@ size_t cbor_deserialize_int(const cbor_stream_t* stream, size_t offset, int* val
 size_t cbor_serialize_int(cbor_stream_t* s, int val)
 {
     if (val >= 0) {
-        // Major type 0: an unsigned integer
+        /* Major type 0: an unsigned integer */
         return encode_int(CBOR_UINT, s, val);
     } else {
-        // Major type 1: an negative integer
+        /* Major type 1: an negative integer */
         return encode_int(CBOR_NEGINT, s, -1 -val);
     }
 }
@@ -419,9 +419,9 @@ size_t cbor_deserialize_int64_t(const cbor_stream_t* stream, size_t offset, int6
     uint64_t buf;
     size_t read_bytes = decode_int(stream, offset, &buf);
     if (CBOR_TYPE(stream, offset) == CBOR_UINT) {
-        *val = buf; // resolve as CBOR_UINT
+        *val = buf; /* resolve as CBOR_UINT */
     } else {
-        *val = -1 -buf; // resolve as CBOR_NEGINT
+        *val = -1 -buf; /* resolve as CBOR_NEGINT */
     }
     return read_bytes;
 }
@@ -429,10 +429,10 @@ size_t cbor_deserialize_int64_t(const cbor_stream_t* stream, size_t offset, int6
 size_t cbor_serialize_int64_t(cbor_stream_t* s, int64_t val)
 {
     if (val >= 0) {
-        // Major type 0: an unsigned integer
+        /* Major type 0: an unsigned integer */
         return encode_int(CBOR_UINT, s, val);
     } else {
-        // Major type 1: an negative integer
+        /* Major type 1: an negative integer */
         return encode_int(CBOR_NEGINT, s, -1 -val);
     }
 }
@@ -570,7 +570,7 @@ size_t cbor_deserialize_array(const cbor_stream_t* s, size_t offset, size_t* arr
 
 size_t cbor_serialize_array(cbor_stream_t* s, size_t array_length)
 {
-    // serialize number of array items
+    /* serialize number of array items */
     return encode_int(CBOR_ARRAY, s, array_length);
 }
 
@@ -631,7 +631,7 @@ bool cbor_at_break(const cbor_stream_t* s, size_t offset)
 
 bool cbor_at_end(const cbor_stream_t* s, size_t offset)
 {
-    // cbor_stream_t::pos points at the next *free* byte, hence the -1
+    /* cbor_stream_t::pos points at the next *free* byte, hence the -1 */
     return s ? offset >= s->pos-1 : true;
 }
 
@@ -650,7 +650,7 @@ size_t cbor_deserialize_map(const cbor_stream_t* s, size_t offset, size_t* map_l
 
 size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length)
 {
-    // serialize number of item key-value pairs
+    /* serialize number of item key-value pairs */
     return encode_int(CBOR_MAP, s, map_length);
 }
 
@@ -661,7 +661,7 @@ size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, st
         return 0;
 
     char buffer[21];
-    offset++;  // skip tag byte to decode date_time
+    offset++;  /* skip tag byte to decode date_time */
     size_t read_bytes = cbor_deserialize_unicode_string(stream, offset, buffer, sizeof(buffer));
     const char* format = "%Y-%m-%dT%H:%M:%SZ";
     if (strptime(buffer, format, val) == 0)
@@ -669,24 +669,24 @@ size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, st
     if (mktime(val) == -1)
         return 0;
 
-    return read_bytes + 1;  // + 1 tag byte
+    return read_bytes + 1;  /* + 1 tag byte */
 }
 
 size_t cbor_serialize_date_time(cbor_stream_t* stream, struct tm* val)
 {
     static const int MAX_TIMESTRING_LENGTH = 21;
-    CBOR_ENSURE_SIZE(stream, MAX_TIMESTRING_LENGTH + 1); // + 1 tag byte
+    CBOR_ENSURE_SIZE(stream, MAX_TIMESTRING_LENGTH + 1); /* + 1 tag byte */
 
     char time_str[MAX_TIMESTRING_LENGTH];
     const char* format = "%Y-%m-%dT%H:%M:%SZ";
-    if (strftime(time_str, sizeof(time_str), format, val) == 0)  // struct tm to string
+    if (strftime(time_str, sizeof(time_str), format, val) == 0)  /* struct tm to string */
         return 0;
 
     if (!cbor_write_tag(stream, CBOR_DATETIME_STRING_FOLLOWS))
         return 0;
 
     size_t written_bytes = cbor_serialize_unicode_string(stream, time_str);
-    return written_bytes + 1; // utf8 time string length + tag length
+    return written_bytes + 1; /* utf8 time string length + tag length */
 }
 
 size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offset, time_t* val)
@@ -695,7 +695,7 @@ size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offs
         return 0;
     }
 
-    offset++; // skip tag byte
+    offset++; /* skip tag byte */
     uint64_t epoch;
     size_t read_bytes = cbor_deserialize_uint64_t(stream, offset, &epoch);
     if (!read_bytes) {
@@ -703,16 +703,16 @@ size_t cbor_deserialize_date_time_epoch(const cbor_stream_t* stream, size_t offs
     }
 
     *val = (time_t)epoch;
-    return read_bytes + 1; // + 1 tag byte
+    return read_bytes + 1; /* + 1 tag byte */
 }
 
 size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val)
 {
-    // we need at least 2 bytes (tag byte + at least 1 byte for the integer)
+    /* we need at least 2 bytes (tag byte + at least 1 byte for the integer) */
     CBOR_ENSURE_SIZE(stream, 2);
 
     if (val < 0) {
-        return 0; // we currently don't support negative values for the time_t object
+        return 0; /* we currently don't support negative values for the time_t object */
     }
 
     if (!cbor_write_tag(stream, CBOR_DATETIME_EPOCH_FOLLOWS)) {
@@ -722,11 +722,11 @@ size_t cbor_serialize_date_time_epoch(cbor_stream_t* stream, time_t val)
 
     uint64_t time = (uint64_t)val;
     size_t written_bytes = encode_int(CBOR_UINT, stream, time);
-    return written_bytes + 1; // + 1 tag byte
+    return written_bytes + 1; /* + 1 tag byte */
 }
 #endif
 
-// BEGIN: Printers
+/* BEGIN: Printers */
 void cbor_stream_print(cbor_stream_t* stream)
 {
     dump_memory(stream->data, stream->pos);
@@ -804,8 +804,8 @@ size_t cbor_stream_decode_at(cbor_stream_t* stream, size_t offset, int indent)
         size_t i = 0;
         while (is_indefinite ? !cbor_at_break(stream, offset) : i < map_length) {
             size_t key_read_bytes, value_read_bytes;
-            offset += key_read_bytes = cbor_stream_decode_at(stream, offset, indent+1); // key
-            offset += value_read_bytes = cbor_stream_decode_at(stream, offset, indent+2); // value
+            offset += key_read_bytes = cbor_stream_decode_at(stream, offset, indent+1); /* key */
+            offset += value_read_bytes = cbor_stream_decode_at(stream, offset, indent+2); /* value */
             if (key_read_bytes == 0 || value_read_bytes == 0) {
                 fprintf(stderr, "Failed to read key-value pair at position %d", i);
                 break;
@@ -877,4 +877,4 @@ void cbor_stream_decode(cbor_stream_t* stream)
 }
 #endif
 
-// END: Printers
+/* END: Printers */
