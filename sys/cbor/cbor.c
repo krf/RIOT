@@ -322,29 +322,26 @@ static size_t decode_int(const cbor_stream_t *s, size_t offset, uint64_t *val)
         return 2;
     }
     else if (additional_info == CBOR_UINT16_FOLLOWS) {
-        *val =
-            (data[1] << 8) |
-            (data[2]);
+        *val = (data[1] << 8) |
+               (data[2]);
         return 3;
     }
     else if (additional_info == CBOR_UINT32_FOLLOWS) {
-        (*val) =
-            ((uint64_t)data[1] << 24) |
-            (data[2] << 16) |
-            (data[3] <<  8) |
-            (data[4]);
+        (*val) = ((uint64_t)data[1] << 24) |
+                 (data[2] << 16) |
+                 (data[3] <<  8) |
+                 (data[4]);
         return 5;
     }
     else if (additional_info == CBOR_UINT64_FOLLOWS) {
-        *val =
-            ((uint64_t)data[1] << 56) |
-            ((uint64_t)data[2] << 48) |
-            ((uint64_t)data[3] << 40) |
-            ((uint64_t)data[4] << 32) |
-            ((uint64_t)data[5] << 24) |
-            (data[6] << 16) |
-            (data[7] <<  8) |
-            (data[8]);
+        *val = ((uint64_t)data[1] << 56) |
+               ((uint64_t)data[2] << 48) |
+               ((uint64_t)data[3] << 40) |
+               ((uint64_t)data[4] << 32) |
+               ((uint64_t)data[5] << 24) |
+               (data[6] << 16) |
+               (data[7] <<  8) |
+               (data[8]);
         return 9;
     }
 
@@ -880,8 +877,8 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
             printf("(tag: %u, ", tag);
 
             switch (tag) {
-                // Non-native builds likely don't have support for ctime (hence disable it there)
-                // TODO: Better check for availability of ctime functions?
+                    // Non-native builds likely don't have support for ctime (hence disable it there)
+                    // TODO: Better check for availability of ctime functions?
 #ifdef BOARD_NATIVE
                 case CBOR_DATETIME_STRING_FOLLOWS: {
                     char buf[64];
@@ -898,6 +895,7 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
                     printf("date/time epoch: %d)\n", (int)time);
                     return read_bytes;
                 }
+
 #endif
 
                 default:
