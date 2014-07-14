@@ -781,7 +781,6 @@ void cbor_stream_print(cbor_stream_t *stream)
     dump_memory(stream->data, stream->pos);
 }
 
-#ifdef BOARD_NATIVE
 /**
  * Decode CBOR data item from @p stream at position @p offset
  *
@@ -836,7 +835,7 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
                 offset += inner_read_bytes = cbor_stream_decode_at(stream, offset, indent + 2);
 
                 if (inner_read_bytes == 0) {
-                    fprintf(stderr, "Failed to read array item at position %d", i);
+                    printf("Failed to read array item at position %d", i);
                     break;
                 }
 
@@ -870,7 +869,7 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
                 offset += value_read_bytes = cbor_stream_decode_at(stream, offset, indent + 2); /* value */
 
                 if (key_read_bytes == 0 || value_read_bytes == 0) {
-                    fprintf(stderr, "Failed to read key-value pair at position %d", i);
+                    printf("Failed to read key-value pair at position %d", i);
                     break;
                 }
 
@@ -887,6 +886,9 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
             printf("(tag: %u, ", tag);
 
             switch (tag) {
+                // Non-native builds likely don't have support for ctime (hence disable it there)
+                // TODO: Better check for availability of ctime functions?
+#ifdef BOARD_NATIVE
                 case CBOR_DATETIME_STRING_FOLLOWS: {
                     char buf[64];
                     struct tm timeinfo;
@@ -902,6 +904,7 @@ size_t cbor_stream_decode_at(cbor_stream_t *stream, size_t offset, int indent)
                     printf("date/time epoch: %d)\n", (int)time);
                     return read_bytes;
                 }
+#endif
 
                 default:
                     printf("unknown content)\n");
@@ -940,7 +943,7 @@ void cbor_stream_decode(cbor_stream_t *stream)
         size_t read_bytes = cbor_stream_decode_at(stream, offset, 0);
 
         if (read_bytes == 0) {
-            fprintf(stderr, "Failed to read from stream at offset %d, start byte 0x%02X\n", offset, stream->data[offset]);
+            printf("Failed to read from stream at offset %d, start byte 0x%02X\n", offset, stream->data[offset]);
             cbor_stream_print(stream);
             return;
         }
@@ -950,6 +953,5 @@ void cbor_stream_decode(cbor_stream_t *stream)
 
     printf("\n");
 }
-#endif
 
 /* END: Printers */

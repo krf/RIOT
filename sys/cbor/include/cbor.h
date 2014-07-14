@@ -156,7 +156,6 @@ void cbor_destroy(cbor_stream_t *stream);
  */
 void cbor_stream_print(cbor_stream_t *stream);
 
-#ifdef BOARD_NATIVE
 /**
  * Decode CBOR from @p stream
  *
@@ -173,7 +172,6 @@ void cbor_stream_print(cbor_stream_t *stream);
  * @endcode
  */
 void cbor_stream_decode(cbor_stream_t *stream);
-#endif
 
 size_t cbor_serialize_int(cbor_stream_t *s, int val);
 size_t cbor_deserialize_int(const cbor_stream_t *stream, size_t offset, int *val);
