@@ -137,8 +137,7 @@ static double ntohd(uint64_t x)
     union u {
         double d;
         uint64_t i;
-    } u;
-    u.i = ntohll(x);
+    } u = { .i = ntohll(x) };
     return u.d;
 }
 
