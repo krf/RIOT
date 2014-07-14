@@ -154,12 +154,13 @@ double decode_float_half(unsigned char *halfp)
     int exp = (half >> 10) & 0x1f;
     int mant = half & 0x3ff;
     double val;
-    if (exp == 0)
+    if (exp == 0) {
         val = ldexp(mant, -24);
-    else if (exp != 31)
+    } else if (exp != 31) {
         val = ldexp(mant + 1024, exp - 25);
-    else
+    } else {
         val = mant == 0 ? INFINITY : NAN;
+    }
     return half & 0x8000 ? -val : val;
 }
 
@@ -176,12 +177,12 @@ static uint16_t encode_float_half(float x)
 
     /* If zero, or denormal, or exponent underflows too much for a denormal
      * half, return signed zero. */
-    if (e < 103)
+    if (e < 103) {
         return bits;
+    }
 
     /* If NaN, return NaN. If Inf or exponent overflow, return Inf. */
-    if (e > 142)
-    {
+    if (e > 142) {
         bits |= 0x7c00u;
         /* If exponent was 0xff and one mantissa bit was set, it means NaN,
          * not Inf, so make sure we set one mantissa bit too. */
@@ -190,8 +191,7 @@ static uint16_t encode_float_half(float x)
     }
 
     /* If exponent underflows but not too much, return a denormal */
-    if (e < 113)
-    {
+    if (e < 113) {
         m |= 0x0800u;
         /* Extra rounding may overflow and set mantissa to 0 and exponent
          * to 1, which is OK. */
@@ -211,8 +211,9 @@ static uint16_t encode_float_half(float x)
  */
 void dump_memory(unsigned char* data, size_t size)
 {
-    if (!data || !size)
+    if (!data || !size) {
         return;
+    }
 
     printf("0x");
     for (size_t i = 0; i < size; ++i) {
@@ -222,8 +223,9 @@ void dump_memory(unsigned char* data, size_t size)
 
 void cbor_init(cbor_stream_t* stream, unsigned char* buffer, size_t size)
 {
-    if (!stream)
+    if (!stream) {
         return;
+    }
 
     stream->data = buffer;
     stream->size = size;
@@ -232,16 +234,18 @@ void cbor_init(cbor_stream_t* stream, unsigned char* buffer, size_t size)
 
 void cbor_clear(cbor_stream_t* stream)
 {
-    if (!stream)
+    if (!stream) {
         return;
+    }
 
     stream->pos = 0;
 }
 
 void cbor_destroy(cbor_stream_t* stream)
 {
-    if (!stream)
+    if (!stream) {
         return;
+    }
 
     stream->data = 0;
     stream->size = 0;
@@ -250,8 +254,9 @@ void cbor_destroy(cbor_stream_t* stream)
 
 static size_t encode_int(unsigned char major_type, cbor_stream_t* s, uint64_t val)
 {
-    if (!s)
+    if (!s) {
         return 0;
+    }
 
     if (val <= 23) {
         CBOR_ENSURE_SIZE(s, 1);
@@ -544,8 +549,9 @@ size_t cbor_serialize_byte_string(cbor_stream_t* stream, const char* val)
 
 size_t cbor_deserialize_unicode_string(const cbor_stream_t* stream, size_t offset, char* val, size_t length)
 {
-    if (CBOR_TYPE(stream, offset) != CBOR_TEXT)
+    if (CBOR_TYPE(stream, offset) != CBOR_TEXT) {
         return 0;
+    }
 
     return decode_bytes(stream, offset, val, length);
 }
@@ -656,8 +662,9 @@ size_t cbor_serialize_map(cbor_stream_t* s, size_t map_length)
 #ifdef BUILD_FOR_NATIVE
 size_t cbor_deserialize_date_time(const cbor_stream_t* stream, size_t offset, struct tm* val)
 {
-    if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS))
+    if ((CBOR_TYPE(stream, offset) != CBOR_TAG) || (CBOR_ADDITIONAL_INFO(stream, offset) != CBOR_DATETIME_STRING_FOLLOWS)) {
         return 0;
+    }
 
     char buffer[21];
     offset++;  /* skip tag byte to decode date_time */
